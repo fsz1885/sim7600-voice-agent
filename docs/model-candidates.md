@@ -95,3 +95,45 @@ license 和 hash 需在下载时记录。原始模型卡不等于指定第三方
 质量达标是前提，不能用错误确认或提前结束换取速度。当前非流式完整 JSON 基线仍必须保留。
 
 本轮交付是候选研究和评测方案；未调用上述新服务，也没有提供任何未经实测的项目延迟数值。
+
+## RTX 4060 追加选型
+
+用户另有一张闲置 RTX 4060 可用，以下按标准桌面版 **8GB 显存**设计，
+不是此前已检测到的 GTX 1650。尚未安装或检测这张卡，也没有在其上运行模型。
+[NVIDIA 规格](https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/)
+列出 RTX 4060 为 8GB；若实际是 4060 Ti 16GB，需要按另一档配置评估。
+
+| 角色 | 模型 | 起步量化 | 指定发布页的 GGUF 文件大小 | 判断 |
+| --- | --- | --- | ---: | --- |
+| 主测候选 | `Qwen/Qwen3.5-4B` | Q4_K_M | 约 3.01GB | 在 8GB 卡上比 9B 更容易给运行缓存和未来语音模块留空间；须关闭思考并验证条件提取 |
+| 非思考对照 | `Qwen/Qwen3-4B-Instruct-2507` | Q4_K_M；再比较 Q5_K_M | 约 2.50GB / 2.89GB | 纯文本、仅非思考，适合作短决策和指令遵循基线；并不假定它必然更快 |
+| 质量上限对照 | `Qwen/Qwen3.5-9B` | Q4_K_M | 约 6.17GB | 短上下文、LLM 独占 GPU 时可尝试；实际是否全驻留需测，不作为共享 ASR/TTS 的默认方案 |
+
+文件大小来自量化发布者页面，只是文件大小，**不是显存实测值**；不同发布者的同名量化
+可能采用不同混合精度和打包方式。这里的 GGUF 是第三方发布物，不冒充 Qwen 官方量化。
+
+- [Qwen3.5-4B 量化发布页](https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF)：Q4_K_M 约 3.01GB，Q5_K_M 约 3.44GB。基础模型见上方官方模型卡。
+- [Qwen3-4B-Instruct-2507 官方模型卡](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507)：明确仅支持非思考，不生成 think 块；[量化发布页](https://huggingface.co/bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF) 给出 Q4/Q5 大小。
+- [Qwen3.5-9B 量化发布页](https://huggingface.co/bartowski/Qwen_Qwen3.5-9B-GGUF)：Q4_K_M 约 6.17GB。不要把“文件小于8GB”等同于可在8GB显存稳定部署。
+
+推荐部署方式是 **llama.cpp CUDA 的 llama-server + GGUF**，单并发起步，
+上下文先设 4096，必要时测 8192，并确认权重层实际全部驻留 GPU。
+模型常驻并预热；每次测试不能重新加载权重。对 Qwen3.5 用引擎支持的非思考设置，
+不能仅隐藏 reasoning 输出。仅使用文本路径，不加载不需要的视觉组件。
+[llama-server 官方文档](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)
+提供 CUDA Docker 镜像、兼容 Chat Completions 的接口及 schema 约束输出。
+具体引擎构建版本、模型文件 hash 和量化来源应随首次部署记录。
+
+未来可把模型服务作为独立容器，Agent 容器通过内网地址访问；保留现有 Core。
+**目前代码还没有本地 Provider**，KimiProvider 限定官方 Kimi 地址，
+不是只改 `.env` 的 URL 就能连本地服务。部署阶段需加一个本地兼容适配器并验证
+streaming、JSON schema、非思考参数和错误处理。本次仅选型，没有改适配器或下载模型。
+
+4060 消除了远端服务排队和外网请求的因素，但仍有预填充和生成耗时，不能承诺亚秒完成。
+例如仅作为算术示意：若实际输出 150 token、解码 60 token/s，仅解码就需约 2.5 秒，
+还没加预填充；60 token/s 不是本卡实测。要达到电话目标，必须同时减少等待播报前的
+输出量，区分首个可播报短句和完整证据 JSON，并保持关键状态校验正确。
+
+建议测试顺序：Qwen3.5-4B Q4 → Qwen3-4B-Instruct-2507 Q4/Q5 → 9B Q4。
+若 4B 仍无法满足速度，加入前述 Qwen3.5-2B 作为速度下限对照；若 4B 的条件/更正理解
+不足，再评估 9B 是否值得牺牲延迟和显存余量。四类模型逐个加载，不在这张卡上同时常驻。
