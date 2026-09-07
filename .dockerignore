@@ -8,3 +8,6 @@ __pycache__
 .ruff_cache
 results
 dist
+docs/speech-evaluation/models
+docs/speech-evaluation/runs
+docs/speech-evaluation/.venv

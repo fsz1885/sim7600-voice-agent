@@ -1,0 +1,88 @@
+{
+  "tts": [
+    {
+      "name": "melo",
+      "mean_s": 1.3896932750000512,
+      "median_s": 1.4206795000009151,
+      "rtf": 0.4361670834821139
+    },
+    {
+      "name": "matcha",
+      "mean_s": 0.25303207499958563,
+      "median_s": 0.24892259999796806,
+      "rtf": 0.0677118104223984
+    },
+    {
+      "name": "kokoro_zh",
+      "mean_s": 2.3438742166666393,
+      "median_s": 2.334531649999917,
+      "rtf": 0.5951651997577075
+    }
+  ],
+  "asr": [
+    {
+      "name": "zipformer_small",
+      "condition": "native",
+      "cer": 0.07614213197969544,
+      "rtf": 0.060022852697004095,
+      "all_keyphrases": 24,
+      "total": 36
+    },
+    {
+      "name": "zipformer_small",
+      "condition": "resampled_8khz",
+      "cer": 0.05583756345177665,
+      "rtf": 0.058799199382297995,
+      "all_keyphrases": 27,
+      "total": 36
+    },
+    {
+      "name": "zipformer_zh",
+      "condition": "native",
+      "cer": 0.023688663282571912,
+      "rtf": 0.1494810363781314,
+      "all_keyphrases": 31,
+      "total": 36
+    },
+    {
+      "name": "zipformer_zh",
+      "condition": "resampled_8khz",
+      "cer": 0.03553299492385787,
+      "rtf": 0.148203480404059,
+      "all_keyphrases": 29,
+      "total": 36
+    },
+    {
+      "name": "paraformer_streaming",
+      "condition": "native",
+      "cer": 0.023688663282571912,
+      "rtf": 0.10176405323234268,
+      "all_keyphrases": 30,
+      "total": 36
+    },
+    {
+      "name": "paraformer_streaming",
+      "condition": "resampled_8khz",
+      "cer": 0.02030456852791878,
+      "rtf": 0.10079264828159296,
+      "all_keyphrases": 29,
+      "total": 36
+    },
+    {
+      "name": "sensevoice",
+      "condition": "native",
+      "cer": 0.01353637901861252,
+      "rtf": 0.05813401322288768,
+      "all_keyphrases": 32,
+      "total": 36
+    },
+    {
+      "name": "sensevoice",
+      "condition": "resampled_8khz",
+      "cer": 0.01353637901861252,
+      "rtf": 0.05702629973288106,
+      "all_keyphrases": 32,
+      "total": 36
+    }
+  ]
+}

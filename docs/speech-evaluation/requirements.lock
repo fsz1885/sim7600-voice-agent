@@ -1,6 +1,7 @@
 cffi==2.1.1
 numpy==2.5.3
 pycparser==3.0
+scipy==1.18.1
 sentencepiece==0.2.2
 sherpa-onnx==1.13.7
 sherpa-onnx-core==1.13.7

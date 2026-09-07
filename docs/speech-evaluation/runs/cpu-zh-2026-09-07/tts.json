@@ -1,0 +1,425 @@
+{
+  "meta": {
+    "provider": "cpu",
+    "threads": 2,
+    "runtime": "1.13.7",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu": "AMD Ryzen 5 3600",
+    "method": "Models loaded sequentially. Warmed once. No paced playback or LLM. CER measures synthetic TTS->ASR consistency, not human recording accuracy. All TTS timings are full-sentence generation, not streaming first audio."
+  },
+  "models": [
+    {
+      "name": "melo",
+      "load_s": 4.310045700000046,
+      "speaker_id": 0
+    },
+    {
+      "name": "matcha",
+      "load_s": 2.337993600001937,
+      "speaker_id": 0
+    },
+    {
+      "name": "kokoro_zh",
+      "load_s": 2.1357361000009405,
+      "speaker_id": 3
+    }
+  ],
+  "rows": [
+    {
+      "tts": "melo",
+      "case_id": "01",
+      "text": "您好，请问注册一家公司的费用是多少？",
+      "wav": "melo/01.wav",
+      "sha256": "b1cf86d7f5426640514c8b5db6915da185c0e142b820d3f3f79fda10a711650c",
+      "sample_rate": 44100,
+      "audio_s": 3.0882539682539685,
+      "full_sentence_s": 1.3388679000017873,
+      "rtf": 0.4335355556132432
+    },
+    {
+      "tts": "melo",
+      "case_id": "02",
+      "text": "大概两千多元，具体要看公司的情况。",
+      "wav": "melo/02.wav",
+      "sha256": "68e15cf062dd6e9193c6ce904a64121c2c058243278be6f227910e4829207789",
+      "sample_rate": 44100,
+      "audio_s": 3.0555555555555554,
+      "full_sentence_s": 1.4472177999996347,
+      "rtf": 0.47363491636351684
+    },
+    {
+      "tts": "melo",
+      "case_id": "03",
+      "text": "不是三千元，是两千五百元，不包含刻章费用。",
+      "wav": "melo/03.wav",
+      "sha256": "eb6e23291caf71322893d11b09c6e02ede3a6d5bb441c9366e808138d2aa35e7",
+      "sample_rate": 44100,
+      "audio_s": 3.7500226757369615,
+      "full_sentence_s": 1.5816567999972904,
+      "rtf": 0.4217725962647573
+    },
+    {
+      "tts": "melo",
+      "case_id": "04",
+      "text": "需要身份证和经营地址证明。",
+      "wav": "melo/04.wav",
+      "sha256": "ae608bc472c2f435acbbaa676cabf228f326e5e3d0242ca857f9a2d41a9d107c",
+      "sample_rate": 44100,
+      "audio_s": 2.2175056689342405,
+      "full_sentence_s": 0.9625744000004488,
+      "rtf": 0.43407979221224424
+    },
+    {
+      "tts": "melo",
+      "case_id": "05",
+      "text": "材料齐全以后，大约五个工作日可以办理完成。",
+      "wav": "melo/05.wav",
+      "sha256": "4c8642d1cd9fa4f3682c54c3fc996acdc086ad246866abc867dcbff90db4805e",
+      "sample_rate": 44100,
+      "audio_s": 3.657142857142857,
+      "full_sentence_s": 1.5808974000028684,
+      "rtf": 0.4322766328132843
+    },
+    {
+      "tts": "melo",
+      "case_id": "06",
+      "text": "这个价格只包含注册，不包含代理记账。",
+      "wav": "melo/06.wav",
+      "sha256": "21037cea494650c9e80367c776b088035664e35db4fecd0f961739a2a317a750",
+      "sample_rate": 44100,
+      "audio_s": 3.1230839002267574,
+      "full_sentence_s": 1.3522878000003402,
+      "rtf": 0.432997589306568
+    },
+    {
+      "tts": "melo",
+      "case_id": "07",
+      "text": "我说的是每年，不是每个月。",
+      "wav": "melo/07.wav",
+      "sha256": "e49f3888d9c6ffc53d3cd57d27b634de7be02c52c6d606bcb6a5ced47f10ebcd",
+      "sample_rate": 44100,
+      "audio_s": 2.3103854875283445,
+      "full_sentence_s": 1.0114218999988225,
+      "rtf": 0.43777192397483583
+    },
+    {
+      "tts": "melo",
+      "case_id": "08",
+      "text": "如果没有实际经营地址，需要另外支付地址费用。",
+      "wav": "melo/08.wav",
+      "sha256": "697fb33de36daf0ba52930c5d096c5eb8fd0975616082bcb25c29167a4660758",
+      "sample_rate": 44100,
+      "audio_s": 3.680362811791383,
+      "full_sentence_s": 1.6015516000006755,
+      "rtf": 0.4351613365045211
+    },
+    {
+      "tts": "melo",
+      "case_id": "09",
+      "text": "可以先咨询，但是今天不要提交申请。",
+      "wav": "melo/09.wav",
+      "sha256": "dc47c8460c94bb8a99fef5432455c4489c40a146e6058b529e6fde029e8e9662",
+      "sample_rate": 44100,
+      "audio_s": 3.1230839002267574,
+      "full_sentence_s": 1.3962176999993972,
+      "rtf": 0.44706378201943986
+    },
+    {
+      "tts": "melo",
+      "case_id": "10",
+      "text": "请在九月十二日下午三点半之前联系我。",
+      "wav": "melo/10.wav",
+      "sha256": "7d622d00a91d0637827e578e5098249cc30cc50b5dbf745dc48cbe633e779448",
+      "sample_rate": 44100,
+      "audio_s": 3.1811337868480725,
+      "full_sentence_s": 1.3638092999972287,
+      "rtf": 0.4287179953372903
+    },
+    {
+      "tts": "melo",
+      "case_id": "11",
+      "text": "银行开户需要法人到场，重庆的分公司也一样。",
+      "wav": "melo/11.wav",
+      "sha256": "f1856699ce7f336dc6d630b2049a0aeecf27a0dd951103297cc0f1af00577221",
+      "sample_rate": 44100,
+      "audio_s": 3.657142857142857,
+      "full_sentence_s": 1.5946753999996872,
+      "rtf": 0.4360440546874145
+    },
+    {
+      "tts": "melo",
+      "case_id": "12",
+      "text": "不是不能办理，是需要补充材料以后才能办理。",
+      "wav": "melo/12.wav",
+      "sha256": "2dd0985db031327b9238f863ac2c3d44634519eaaa52fabce4f799b6957f3acf",
+      "sample_rate": 44100,
+      "audio_s": 3.3901133786848074,
+      "full_sentence_s": 1.4451413000024331,
+      "rtf": 0.4262811117435473
+    },
+    {
+      "tts": "matcha",
+      "case_id": "01",
+      "text": "您好，请问注册一家公司的费用是多少？",
+      "wav": "matcha/01.wav",
+      "sha256": "bd227677af2a1d4e7913d2aed396727d3cc8e1f87cd5f64c9386c490d0a020ce",
+      "sample_rate": 22050,
+      "audio_s": 3.5817233560090704,
+      "full_sentence_s": 0.2476050999975996,
+      "rtf": 0.06913015757685238
+    },
+    {
+      "tts": "matcha",
+      "case_id": "02",
+      "text": "大概两千多元，具体要看公司的情况。",
+      "wav": "matcha/02.wav",
+      "sha256": "f5394508bec70c8525529f5703dcf954705aa01568460782a3ed0c13df66edea",
+      "sample_rate": 22050,
+      "audio_s": 3.415736961451247,
+      "full_sentence_s": 0.2502400999983365,
+      "rtf": 0.07326093982717474
+    },
+    {
+      "tts": "matcha",
+      "case_id": "03",
+      "text": "不是三千元，是两千五百元，不包含刻章费用。",
+      "wav": "matcha/03.wav",
+      "sha256": "cd6519acc4a683cafb23efb91718061ed741dabf02ad959b30d53ce8a534a944",
+      "sample_rate": 22050,
+      "audio_s": 4.626394557823129,
+      "full_sentence_s": 0.3369386999984272,
+      "rtf": 0.07282965077603928
+    },
+    {
+      "tts": "matcha",
+      "case_id": "04",
+      "text": "需要身份证和经营地址证明。",
+      "wav": "matcha/04.wav",
+      "sha256": "d02a2cb513450a8f2ddf5641c2253964383649a0d43d917713e053a9f1cd843a",
+      "sample_rate": 22050,
+      "audio_s": 2.5282539682539684,
+      "full_sentence_s": 0.15703800000119372,
+      "rtf": 0.06211322199946763
+    },
+    {
+      "tts": "matcha",
+      "case_id": "05",
+      "text": "材料齐全以后，大约五个工作日可以办理完成。",
+      "wav": "matcha/05.wav",
+      "sha256": "4c533780c03e11d2a43dc07c529200fd4d7daaf9f05c9f028a6d723fb4648648",
+      "sample_rate": 22050,
+      "audio_s": 4.312834467120181,
+      "full_sentence_s": 0.291408599998249,
+      "rtf": 0.0675677683017665
+    },
+    {
+      "tts": "matcha",
+      "case_id": "06",
+      "text": "这个价格只包含注册，不包含代理记账。",
+      "wav": "matcha/06.wav",
+      "sha256": "83f81fd1896a46f3c4222759f4e620991eacc2d151ba797ff66e4aedbb7603e8",
+      "sample_rate": 22050,
+      "audio_s": 3.67156462585034,
+      "full_sentence_s": 0.24427359999754117,
+      "rtf": 0.0665311998807503
+    },
+    {
+      "tts": "matcha",
+      "case_id": "07",
+      "text": "我说的是每年，不是每个月。",
+      "wav": "matcha/07.wav",
+      "sha256": "8d52399d41c871821bd99bf032cf42963b1d99de1ca2adff80e2e73c3fe5d4d1",
+      "sample_rate": 22050,
+      "audio_s": 2.3982312925170066,
+      "full_sentence_s": 0.18867580000005546,
+      "rtf": 0.078672895557974
+    },
+    {
+      "tts": "matcha",
+      "case_id": "08",
+      "text": "如果没有实际经营地址，需要另外支付地址费用。",
+      "wav": "matcha/08.wav",
+      "sha256": "50c452e3b02b7672223fff8b4fa9c0c084536e4511920af7c865ca59bfe2e26e",
+      "sample_rate": 22050,
+      "audio_s": 4.227120181405896,
+      "full_sentence_s": 0.29841880000094534,
+      "rtf": 0.07059624216827788
+    },
+    {
+      "tts": "matcha",
+      "case_id": "09",
+      "text": "可以先咨询，但是今天不要提交申请。",
+      "wav": "matcha/09.wav",
+      "sha256": "912a3bbd9ad18b826335f7fad5130b0e92ebf8ff59a6ca95cb9dedc9b7ec5d65",
+      "sample_rate": 22050,
+      "audio_s": 3.654829931972789,
+      "full_sentence_s": 0.23485340000115684,
+      "rtf": 0.06425836615450631
+    },
+    {
+      "tts": "matcha",
+      "case_id": "10",
+      "text": "请在九月十二日下午三点半之前联系我。",
+      "wav": "matcha/10.wav",
+      "sha256": "0dc37ade7f97ba6c2aac31e2c0b96ae6d86d3a8792d052068a210295aec80d4d",
+      "sample_rate": 22050,
+      "audio_s": 3.7310657596371883,
+      "full_sentence_s": 0.22219780000159517,
+      "rtf": 0.05955343977191167
+    },
+    {
+      "tts": "matcha",
+      "case_id": "11",
+      "text": "银行开户需要法人到场，重庆的分公司也一样。",
+      "wav": "matcha/11.wav",
+      "sha256": "d85b6f54f52c9055bbe39a4dfa5790147a2b3c88bda8710e3e455c84d1e309cf",
+      "sample_rate": 22050,
+      "audio_s": 4.317324263038548,
+      "full_sentence_s": 0.2958164999981818,
+      "rtf": 0.0685184808865816
+    },
+    {
+      "tts": "matcha",
+      "case_id": "12",
+      "text": "不是不能办理，是需要补充材料以后才能办理。",
+      "wav": "matcha/12.wav",
+      "sha256": "b2ea919c3c8a415a5868bac434a93b23f6a74ef181dbbcb21841a01bca8091ee",
+      "sample_rate": 22050,
+      "audio_s": 4.377687074829932,
+      "full_sentence_s": 0.268918500001746,
+      "rtf": 0.06142935650835508
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "01",
+      "text": "您好，请问注册一家公司的费用是多少？",
+      "wav": "kokoro_zh/01.wav",
+      "sha256": "5d1a79f7d1afc26e7e74e87453768d50be8119acff715dc082f0686cd0ef767b",
+      "sample_rate": 24000,
+      "audio_s": 3.7213333333333334,
+      "full_sentence_s": 2.1945739000002504,
+      "rtf": 0.5897278484414862
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "02",
+      "text": "大概两千多元，具体要看公司的情况。",
+      "wav": "kokoro_zh/02.wav",
+      "sha256": "82fb9948c0ab60e2e0ac48671a82b30b3269cd5808f9d90b1dbe5392a07470ec",
+      "sample_rate": 24000,
+      "audio_s": 3.777041666666667,
+      "full_sentence_s": 2.2628087000011874,
+      "rtf": 0.5990955090517104
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "03",
+      "text": "不是三千元，是两千五百元，不包含刻章费用。",
+      "wav": "kokoro_zh/03.wav",
+      "sha256": "91c3b6c0fa9fc4e0a0d9c882b5053320a38a2dd7616bdce305a9d49cec598f28",
+      "sample_rate": 24000,
+      "audio_s": 4.899375,
+      "full_sentence_s": 3.063774399997783,
+      "rtf": 0.6253398443674515
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "04",
+      "text": "需要身份证和经营地址证明。",
+      "wav": "kokoro_zh/04.wav",
+      "sha256": "6a89c1e8a35cc825b1d2a970d86a2b9fb80f6a4d754b30024e41b7d2c5e6003f",
+      "sample_rate": 24000,
+      "audio_s": 2.845375,
+      "full_sentence_s": 1.636838099999295,
+      "rtf": 0.5752626982381215
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "05",
+      "text": "材料齐全以后，大约五个工作日可以办理完成。",
+      "wav": "kokoro_zh/05.wav",
+      "sha256": "510eb967c00ee693c32472c9b3cae9e131f5631284c9d86e9fdd857bd94cd166",
+      "sample_rate": 24000,
+      "audio_s": 4.387958333333334,
+      "full_sentence_s": 2.800565400000778,
+      "rtf": 0.6382388316511919
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "06",
+      "text": "这个价格只包含注册，不包含代理记账。",
+      "wav": "kokoro_zh/06.wav",
+      "sha256": "d35519879d619c417ae95bace6aa469eb0aee1cef3a797a37d7cccaecd15ff48",
+      "sample_rate": 24000,
+      "audio_s": 4.0425,
+      "full_sentence_s": 2.406254599998647,
+      "rtf": 0.5952392331474697
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "07",
+      "text": "我说的是每年，不是每个月。",
+      "wav": "kokoro_zh/07.wav",
+      "sha256": "cfb88e98864bd79ce2b36450bd6f3831362157d0724c1997c02341fccd95ab83",
+      "sample_rate": 24000,
+      "audio_s": 2.87225,
+      "full_sentence_s": 1.8382395000007818,
+      "rtf": 0.6399998259207178
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "08",
+      "text": "如果没有实际经营地址，需要另外支付地址费用。",
+      "wav": "kokoro_zh/08.wav",
+      "sha256": "d96fc8a3044f622f1a0dd6a40cdcc5ade6b19338838e952ce40eb103dfb3f77c",
+      "sample_rate": 24000,
+      "audio_s": 4.438166666666667,
+      "full_sentence_s": 2.548749900000985,
+      "rtf": 0.5742798978559431
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "09",
+      "text": "可以先咨询，但是今天不要提交申请。",
+      "wav": "kokoro_zh/09.wav",
+      "sha256": "e9cc01a585f5b1656552973b6f4f76a1641e5944d04da325a3bd311dd040fb2c",
+      "sample_rate": 24000,
+      "audio_s": 3.7615833333333333,
+      "full_sentence_s": 2.226806900001975,
+      "rtf": 0.5919865925258357
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "10",
+      "text": "请在九月十二日下午三点半之前联系我。",
+      "wav": "kokoro_zh/10.wav",
+      "sha256": "9c9b5250a6a5b2506b8b6f6c98cdc45d2ea4e6bf9e9a9bfda16f1fadc41314de",
+      "sample_rate": 24000,
+      "audio_s": 3.5889583333333333,
+      "full_sentence_s": 2.007130699999834,
+      "rtf": 0.5592516027166196
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "11",
+      "text": "银行开户需要法人到场，重庆的分公司也一样。",
+      "wav": "kokoro_zh/11.wav",
+      "sha256": "f9118ed5659280bd92c197ab8890e148a481be4e354ca99e44e9c1c68ea7f0dd",
+      "sample_rate": 24000,
+      "audio_s": 4.495333333333333,
+      "full_sentence_s": 2.6024421000001894,
+      "rtf": 0.5789208290079022
+    },
+    {
+      "tts": "kokoro_zh",
+      "case_id": "12",
+      "text": "不是不能办理，是需要补充材料以后才能办理。",
+      "wav": "kokoro_zh/12.wav",
+      "sha256": "88ea3dc3cac66a1831b27330303b866585d566184072001075c5c47ed8d3bc29",
+      "sample_rate": 24000,
+      "audio_s": 4.428416666666666,
+      "full_sentence_s": 2.538306399997964,
+      "rtf": 0.5731859919831311
+    }
+  ]
+}

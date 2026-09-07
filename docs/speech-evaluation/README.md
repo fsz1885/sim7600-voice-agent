@@ -1,6 +1,57 @@
 # 单卡 RTX 4060 8GB：本地模型与语音评估
 
 日期：2026-09-07。当前电脑检测到 GTX 1650 4GB、Ryzen 5 3600、32GB RAM；4060 尚未装入。
+
+## 多模型 CPU 中文对比
+
+新增 [4 个 ASR × 3 个 TTS 的 CPU 评估](runs/cpu-zh-2026-09-07/README.md)，
+包含 36 条合成音频、288 次识别记录和本地浏览器试听页面。
+原采样率与 8kHz 降采样分别报告，不混合成一个准确率。
+
+本轮结论：
+
+- **优先后续验证 Paraformer 流式 ASR + Matcha TTS。** Matcha 完整短句平均 0.253 秒，
+  MeloTTS 1.390 秒、Kokoro 中文 2.344 秒；这是 CPU 逐个模型测量，不是整套系统延迟。
+- 原采样率合成语音 CER：旧 Zipformer small 7.6%、中文 Zipformer 2.4%、Paraformer 2.4%、SenseVoice 1.4%。
+  中文 Zipformer 的关键短语全部命中为 31/36，Paraformer 为 30/36；前者计算 RTF 0.149，后者 0.102，
+  因此保留两者比较准确性/响应速度的取舍，而不把其中一个视为全面胜出。
+- SenseVoice 对 Kokoro 的 12 条音频字面 CER 为 0%，对 Matcha 为 0.5%、MeloTTS 为 3.6%；
+  这只是固定小样本回环结果。SenseVoice 是整句离线，适合作离线转写对照，不能把其低 RTF 等同于更早返回文字。
+- Matcha 的费用更正句经 SenseVoice 转写时“刻章”成了“客章”；MeloTTS 同句出现“五是三千元至两千五百元”。
+  这些是链路错误，仍需人工听辨确认归因。不得用 ASR 一致性代替主观音质评分。
+- 部分 ASR 在 8kHz 数据上分数反而改善；小样本重采样可能改变声学特征，不能据此声称电话音质更好。
+
+| 角色 | 候选及来源 | 当前实际配置 |
+|---|---|---|
+| ASR 对照 | [Zipformer small 中英双语 2023-02-16](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html) | 流式，优先 FP32，greedy_search |
+| ASR | [中文 Zipformer 2025-06-30](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html) | 流式，encoder/joiner INT8、decoder FP32 |
+| ASR | [Paraformer 中英流式 ONNX](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-paraformer/paraformer-models.html) | encoder/decoder INT8；不是把 FunASR 所有同名变体视为同一模型 |
+| ASR | [SenseVoice](https://k2-fsa.github.io/sherpa/onnx/sense-voice/pretrained.html) | 整句离线，INT8，language=zh，use_itn=False |
+| TTS 对照 | [MeloTTS zh_en](https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/vits.html) | FP32、sid=0、44.1kHz |
+| TTS | [Matcha icefall zh Baker + Vocos](https://k2-fsa.github.io/sherpa/onnx/tts/all/Chinese/matcha-icefall-zh-baker.html) | 中文单音色、3 步声学模型、Vocos 22kHz、sid=0 |
+| TTS | [Kokoro 82M v1.1-zh](https://k2-fsa.github.io/sherpa/onnx/tts/all/Chinese-English/kokoro-multi-lang-v1_1.html) | FP32、中文女声 zf_001（sid=3）、24kHz |
+
+此轮模型逐个运行，不是 LLM/ASR/TTS 并发测试。选择 ONNX CPU 实现，因此没有安装需要更重运行环境的 CosyVoice/Qwen3-TTS。
+本轮未微调模型或根据识别结果修改测试文本。关键短语清单在测试前固定；检查不能验证词序、作用范围和最终业务语义。
+CER 未统一数字写法及同音异体字，不能单靠 CER 判定金额或条件正确性。
+所有 TTS 音频尚需人工听辨自然度；运行中 Matcha 出现词典 unknown token `shei2`、Kokoro 出现 `❓` 警告，
+保留结果用于诊断，警告本身不能证明具体测试句读错。
+
+在本目录重跑（先按下文安装基础模型与环境）：
+
+```powershell
+uv pip install --python .\.venv\Scripts\python.exe -r requirements.lock
+.\.venv\Scripts\python.exe .\setup_comparison.py
+.\.venv\Scripts\python.exe .\compare_cpu.py --run my-cpu-comparison
+.\.venv\Scripts\python.exe .\report_comparison.py --run my-cpu-comparison
+```
+
+新模型下载哈希见 [comparison-manifest.json](comparison-manifest.json)。
+脚本拒绝覆盖已有 TTS 结果；请为新测量使用新的 `--run` 名称。
+比较中的 WAV 来自 TTS JSON 所记录的文件哈希，ASR 开始前验证所有文件一致。
+
+## 首次基线与单卡规划
+
 本目录包含独立 Windows Python 评估脚本与报告，不是 Docker 服务，没有改动现有 Kimi 配置。
 原始实测记录见 [baseline.json](baseline.json)，模型来源与归档哈希见 [model-manifest.json](model-manifest.json)。
 模型权重与虚拟环境不提交 Git。本轮五条合成测试音频已提交，便于听辨回环错误。
