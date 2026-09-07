@@ -1,0 +1,378 @@
+{
+  "recorded_at": "2026-09-07T07:17:08.812667+00:00",
+  "model": "kimi-for-coding",
+  "base_url": "https://api.kimi.com/coding/v1",
+  "measurement": "Non-streaming full Agent decision wall time, including HTTP and repair",
+  "sample_note": "One dialogue; not a load test or time-to-first-token measurement",
+  "summary": {
+    "turns": 9,
+    "api_calls": 9,
+    "successful_http_calls": 9,
+    "repair_calls": 0,
+    "mean_seconds": 6.361,
+    "median_seconds": 4.699,
+    "p95_nearest_rank_seconds": 15.251,
+    "min_seconds": 3.984,
+    "max_seconds": 15.251,
+    "clarification_observed": true
+  },
+  "result": {
+    "completed": false,
+    "status": "active",
+    "goal": "确认某园区是否可以提供公司注册地址，并获取相关办理条件",
+    "fields": {
+      "是否可以提供注册地址": "可以提供",
+      "注册地址费用": "地址本身免费，但须绑定代理记账",
+      "是否要求实际办公": "否",
+      "是否强制绑定代理记账": "是",
+      "代理记账价格": "每年2400元人民币",
+      "银行开户支持": "可以协助银行开户，但是否通过由银行审核",
+      "ICP备案支持": "支持ICP备案，需要按主管部门要求提交材料",
+      "所需材料": "法人和股东身份证、公司名称、经营范围、注册资本和持股比例",
+      "注册周期": null
+    },
+    "field_details": {
+      "是否可以提供注册地址": {
+        "status": "confirmed",
+        "value": "可以提供",
+        "evidence": [
+          {
+            "turn": 1,
+            "quote": "可以提供。"
+          }
+        ]
+      },
+      "注册地址费用": {
+        "status": "confirmed",
+        "value": "地址本身免费，但须绑定代理记账",
+        "evidence": [
+          {
+            "turn": 2,
+            "quote": "地址本身免费，但是必须在我们这里做代理记账"
+          }
+        ]
+      },
+      "是否要求实际办公": {
+        "status": "confirmed",
+        "value": "否",
+        "evidence": [
+          {
+            "turn": 2,
+            "quote": "不用实际办公"
+          }
+        ]
+      },
+      "是否强制绑定代理记账": {
+        "status": "confirmed",
+        "value": "是",
+        "evidence": [
+          {
+            "turn": 2,
+            "quote": "必须在我们这里做代理记账"
+          }
+        ]
+      },
+      "代理记账价格": {
+        "status": "confirmed",
+        "value": "每年2400元人民币",
+        "evidence": [
+          {
+            "turn": 3,
+            "quote": "大概两千多吧"
+          },
+          {
+            "turn": 4,
+            "quote": "确定是每年2400元人民币"
+          }
+        ]
+      },
+      "银行开户支持": {
+        "status": "confirmed",
+        "value": "可以协助银行开户，但是否通过由银行审核",
+        "evidence": [
+          {
+            "turn": 5,
+            "quote": "可以协助银行开户，但是否通过由银行审核"
+          }
+        ]
+      },
+      "ICP备案支持": {
+        "status": "confirmed",
+        "value": "支持ICP备案，需要按主管部门要求提交材料",
+        "evidence": [
+          {
+            "turn": 6,
+            "quote": "支持ICP备案，需要按主管部门要求提交材料"
+          }
+        ]
+      },
+      "所需材料": {
+        "status": "confirmed",
+        "value": "法人和股东身份证、公司名称、经营范围、注册资本和持股比例",
+        "evidence": [
+          {
+            "turn": 7,
+            "quote": "需要法人和股东身份证、公司名称、经营范围、注册资本和持股比例。"
+          }
+        ]
+      },
+      "注册周期": {
+        "status": "unknown",
+        "value": null,
+        "evidence": []
+      }
+    },
+    "missing_fields": [
+      "注册周期"
+    ]
+  },
+  "turns": [
+    {
+      "user": null,
+      "seconds": 4.408,
+      "decision": {
+        "response": "您好，请问咱们园区可以提供公司注册地址吗？",
+        "action": "continue",
+        "target_field": "是否可以提供注册地址",
+        "updates": {},
+        "reason": "首次沟通，首要确认核心前提——园区是否提供注册地址服务，这是后续所有问题的基础。"
+      }
+    },
+    {
+      "user": "可以提供。",
+      "seconds": 4.699,
+      "decision": {
+        "response": "好的，那请问这个注册地址怎么收费呢？",
+        "action": "continue",
+        "target_field": "注册地址费用",
+        "updates": {
+          "是否可以提供注册地址": {
+            "status": "confirmed",
+            "value": "可以提供",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "可以提供。"
+              }
+            ]
+          }
+        },
+        "reason": "已确认可以提供注册地址，按业务关联性接下来应了解注册地址费用，这是企业最关心的成本问题。"
+      }
+    },
+    {
+      "user": "地址本身免费，但是必须在我们这里做代理记账，不用实际办公。",
+      "seconds": 7.976,
+      "decision": {
+        "response": "那代理记账一年多少钱呢？",
+        "action": "continue",
+        "target_field": "代理记账价格",
+        "updates": {
+          "注册地址费用": {
+            "status": "confirmed",
+            "value": "地址本身免费，但须绑定代理记账",
+            "evidence": [
+              {
+                "turn": 2,
+                "quote": "地址本身免费，但是必须在我们这里做代理记账"
+              }
+            ]
+          },
+          "是否要求实际办公": {
+            "status": "confirmed",
+            "value": "否",
+            "evidence": [
+              {
+                "turn": 2,
+                "quote": "不用实际办公"
+              }
+            ]
+          },
+          "是否强制绑定代理记账": {
+            "status": "confirmed",
+            "value": "是",
+            "evidence": [
+              {
+                "turn": 2,
+                "quote": "必须在我们这里做代理记账"
+              }
+            ]
+          }
+        },
+        "reason": "用户已明确地址免费但强制绑定代理记账、无需实际办公。注册地址费用和是否要求实际办公、是否强制绑定代理记账均已确认。按业务关联性，强制绑定条件下企业最关心的是代理记账价格，需继续追问。"
+      }
+    },
+    {
+      "user": "大概两千多吧。",
+      "seconds": 4.095,
+      "decision": {
+        "response": "大概两千多具体是多少呢？有准确的价格吗？",
+        "action": "clarify",
+        "target_field": "代理记账价格",
+        "updates": {
+          "代理记账价格": {
+            "status": "partial",
+            "value": "大概两千多",
+            "evidence": [
+              {
+                "turn": 3,
+                "quote": "大概两千多吧"
+              }
+            ]
+          }
+        },
+        "reason": "用户给出了模糊价格\"大概两千多\"，缺乏准确金额，需要澄清具体数字。"
+      }
+    },
+    {
+      "user": "确定是每年2400元人民币。",
+      "seconds": 4.689,
+      "decision": {
+        "response": "好的，那咱们这边能支持银行开户吗？",
+        "action": "continue",
+        "target_field": "银行开户支持",
+        "updates": {
+          "代理记账价格": {
+            "status": "confirmed",
+            "value": "每年2400元人民币",
+            "evidence": [
+              {
+                "turn": 3,
+                "quote": "大概两千多吧"
+              },
+              {
+                "turn": 4,
+                "quote": "确定是每年2400元人民币"
+              }
+            ]
+          }
+        },
+        "reason": "用户已明确确认代理记账价格为每年2400元，该字段已confirmed。接下来按缺失信息优先级继续询问银行开户支持情况。"
+      }
+    },
+    {
+      "user": "可以协助银行开户，但是否通过由银行审核。",
+      "seconds": 15.251,
+      "decision": {
+        "response": "好的，那咱们园区支持ICP备案吗？",
+        "action": "continue",
+        "target_field": "ICP备案支持",
+        "updates": {
+          "银行开户支持": {
+            "status": "confirmed",
+            "value": "可以协助银行开户，但是否通过由银行审核",
+            "evidence": [
+              {
+                "turn": 5,
+                "quote": "可以协助银行开户，但是否通过由银行审核"
+              }
+            ]
+          }
+        },
+        "reason": "用户已明确银行开户支持情况：园区可协助办理，但最终由银行审核决定。该字段已confirmed。接下来按缺失信息优先级继续询问ICP备案支持情况。"
+      }
+    },
+    {
+      "user": "支持ICP备案，需要按主管部门要求提交材料。",
+      "seconds": 6.522,
+      "decision": {
+        "response": "好的，那办理注册需要准备哪些材料呢？",
+        "action": "continue",
+        "target_field": "所需材料",
+        "updates": {
+          "ICP备案支持": {
+            "status": "confirmed",
+            "value": "支持ICP备案，需要按主管部门要求提交材料",
+            "evidence": [
+              {
+                "turn": 6,
+                "quote": "支持ICP备案，需要按主管部门要求提交材料"
+              }
+            ]
+          }
+        },
+        "reason": "用户已确认支持ICP备案，但需按主管部门要求提交材料。该字段已confirmed。目前剩余缺失信息为所需材料和注册周期，按业务关联性优先询问所需材料。"
+      }
+    },
+    {
+      "user": "需要法人和股东身份证、公司名称、经营范围、注册资本和持股比例。",
+      "seconds": 5.622,
+      "decision": {
+        "response": "好的，那从提交材料到拿到营业执照大概需要多长时间呢？",
+        "action": "continue",
+        "target_field": "注册周期",
+        "updates": {
+          "所需材料": {
+            "status": "confirmed",
+            "value": "法人和股东身份证、公司名称、经营范围、注册资本和持股比例",
+            "evidence": [
+              {
+                "turn": 7,
+                "quote": "需要法人和股东身份证、公司名称、经营范围、注册资本和持股比例。"
+              }
+            ]
+          }
+        },
+        "reason": "用户已明确列出所需材料五项，该字段已confirmed。目前仅剩注册周期未确认，按业务关联性继续询问。"
+      }
+    },
+    {
+      "user": "材料齐全后5到7个工作日。",
+      "seconds": 3.984,
+      "decision": {
+        "response": "好的，那从提交材料到拿到营业执照大概需要多长时间呢？",
+        "action": "continue",
+        "target_field": "注册周期",
+        "updates": {},
+        "reason": "上一轮已询问注册周期，等待用户回复。当前所有其他字段均已confirmed，仅剩注册周期待确认。"
+      }
+    }
+  ],
+  "api_calls": [
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 4.408
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 4.698
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 7.976
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 4.094
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 4.688
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 15.251
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 6.522
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 5.622
+    },
+    {
+      "repair": false,
+      "success": true,
+      "seconds": 3.984
+    }
+  ]
+}

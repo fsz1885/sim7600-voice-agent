@@ -16,6 +16,11 @@ partial，明确完整信息为 confirmed。明确更正可覆盖旧值；无法
 每轮仅询问一个核心问题，target_field 必须对应实际问句且尚未 confirmed。
 若 target_field 是 partial，用 clarify；其他未确认字段用 continue。
 不得重复问已经 confirmed 的信息。口语、简短，不闲聊，不长篇解释。
+response 只能围绕 target_field 的一个信息点发问，不能顺带问其他字段。
+例如 target_field=所需材料 时只能问材料，不能同时问办理周期。
+clarify 时只澄清当前字段，不追加银行开户等新话题，不复述长清单。
+value 必须保留原话中的前提和限制：例如“材料齐全后5到7个工作日”不可简化成
+“5到7个工作日”；“地址免费但须绑定代理记账”应在地址费用中保留绑定条件。
 所有必要字段 confirmed 才能 finish（target_field=null）。不要自行结束未完成的任务。
 输出符合所提供 schema 的 JSON，包含 response, action, target_field, updates, reason。
 """
@@ -80,6 +85,75 @@ class AnthropicProvider:
             return output
         except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
             raise ProviderError("LLM request failed") from exc
+
+
+class KimiProvider:
+    """Kimi Chat Completions adapter; JSON mode plus Core schema validation."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        timeout: float = 60,
+        base_url: str = "https://api.moonshot.cn/v1",
+    ):
+        if not api_key or not model or timeout <= 0:
+            raise ValueError("Set KIMI_API_KEY and LLM_MODEL; timeout must be positive")
+        if base_url not in ("https://api.moonshot.cn/v1", "https://api.kimi.com/coding/v1"):
+            raise ValueError("KIMI_BASE_URL must be an official supported Kimi endpoint")
+        self.api_key, self.model, self.timeout = api_key, model, timeout
+        self.base_url = base_url
+
+    async def propose(self, task: Task, state: State, error: str | None = None) -> str:
+        payload = {
+            "model": self.model,
+            "max_tokens": 2048,
+            "thinking": {"type": "disabled"},
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                    + "\nJSON Schema:\n"
+                    + json.dumps(Proposal.model_json_schema(), ensure_ascii=False),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "task": task.model_dump(),
+                            "fields": {n: f.model_dump() for n, f in state.fields.items()},
+                            "history": [m.model_dump() for m in state.history],
+                            "latest_user_message": state.history[-1].content
+                            if state.history and state.history[-1].role == "user"
+                            else None,
+                            "instruction": "先提取 latest_user_message 中的信息生成 updates，"
+                            "再决定问题，不可直接重复上一轮问题。",
+                            "repair": error,
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+        }
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    self.base_url + "/chat/completions",
+                    json=payload,
+                    headers={"Authorization": "Bearer " + self.api_key},
+                )
+                if response.is_error:
+                    raise ProviderError(f"Kimi HTTP {response.status_code}")
+                choice = response.json()["choices"][0]
+            if choice["finish_reason"] != "stop":
+                raise ProviderError("Incomplete or refused Kimi response")
+            output = choice["message"]["content"]
+            if not isinstance(output, str) or not output.strip():
+                raise ProviderError("No text in Kimi response")
+            return output
+        except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError) as exc:
+            raise ProviderError("Kimi request failed") from exc
 
 
 class MockProvider:

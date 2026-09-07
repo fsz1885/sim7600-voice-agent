@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .core import Agent
 from .models import State, Task
-from .providers import AnthropicProvider, MockProvider
+from .providers import AnthropicProvider, KimiProvider, MockProvider
 
 
 async def chat(path: Path, scripted: bool = False) -> int:
@@ -26,8 +26,15 @@ async def chat(path: Path, scripted: bool = False) -> int:
             os.getenv("LLM_MODEL", ""),
             timeout,
         )
+    elif provider_name == "kimi":
+        provider = KimiProvider(
+            os.getenv("KIMI_API_KEY", ""),
+            os.getenv("LLM_MODEL", ""),
+            timeout,
+            os.getenv("KIMI_BASE_URL", "https://api.moonshot.cn/v1"),
+        )
     else:
-        raise ValueError("LLM_PROVIDER must be mock or anthropic")
+        raise ValueError("LLM_PROVIDER must be mock, anthropic or kimi")
     if scripted and provider_name != "mock":
         raise ValueError("demo is offline-only; set LLM_PROVIDER=mock")
     if scripted and not dialogue:

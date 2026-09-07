@@ -51,6 +51,39 @@ LLM_TIMEOUT_SECONDS=30
 并检查截断、拒绝和 HTTP 失败。[官方接口说明](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)。
 新增模型厂商只需实现 `Provider.propose`，无需修改 Core。
 
+### Kimi
+
+设置 `LLM_PROVIDER=kimi`、`KIMI_API_KEY`、`LLM_MODEL` 和 `KIMI_BASE_URL`。
+两类密钥与接口不能混用：
+
+| 密钥来源 | KIMI_BASE_URL | LLM_MODEL |
+| --- | --- | --- |
+| Moonshot 开放平台 | `https://api.moonshot.cn/v1` | 账号可用模型，例如 `kimi-k2.5` |
+| Kimi Code | `https://api.kimi.com/coding/v1` | `kimi-for-coding` |
+
+接口区别见 [Kimi Code 官方说明](https://www.kimi.com/code/docs/)。
+适配器关闭 thinking，采用 JSON mode + Core 本地 schema/业务验证；JSON mode 本身不保证业务正确。
+模型列表、权限与额度以账号实际返回为准，服务拒绝访问时不会伪装其他客户端绕过限制。
+
+```bash
+docker compose build
+docker compose run --rm app chat examples/company-registration.json
+# 配置真实模型后，如需离线 demo，请显式覆盖 Provider：
+docker compose run --rm -e LLM_PROVIDER=mock app demo examples/company-registration.json
+```
+
+手动执行真实延迟评测（会消耗 API 额度，CI 不运行）：
+
+```bash
+# 已在 shell 设置所需环境变量时
+python -m voice_agent.benchmark examples/company-registration.json --output results/kimi.json
+```
+
+评测使用真实模型选择问题，再匹配固定的模拟对方回答，不把 fixture 里的字段答案直接传给模型。
+测量从调用 Core 到完整结构化决策返回的耗时，包含网络、完整生成和修复重试，
+不是首 token 延迟，也不是 ASR/TTS 或完整电话链路耗时。单次会话的 P95 仅为小样本描述。
+实际评测记录、延迟统计及未解决的行为问题见 [Kimi 实测报告](docs/kimi-evaluation.md)。
+
 ## 架构与状态
 
 ```text
