@@ -1,5 +1,6 @@
 .venv/
 models/
+!results/
 results/*
 !results/sample-1.wav
 !results/sample-2.wav
