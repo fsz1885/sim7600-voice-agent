@@ -1,4 +1,9 @@
 .venv/
 models/
-results/
+results/*
+!results/sample-1.wav
+!results/sample-2.wav
+!results/sample-3.wav
+!results/sample-4.wav
+!results/sample-5.wav
 __pycache__/

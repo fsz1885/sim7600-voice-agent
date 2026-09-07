@@ -3,7 +3,18 @@
 日期：2026-09-07。当前电脑检测到 GTX 1650 4GB、Ryzen 5 3600、32GB RAM；4060 尚未装入。
 本目录包含独立 Windows Python 评估脚本与报告，不是 Docker 服务，没有改动现有 Kimi 配置。
 原始实测记录见 [baseline.json](baseline.json)，模型来源与归档哈希见 [model-manifest.json](model-manifest.json)。
-模型权重、虚拟环境与生成音频不提交 Git。
+模型权重与虚拟环境不提交 Git。本轮五条合成测试音频已提交，便于听辨回环错误。
+
+| 音频 | TTS 输入文本 |
+|---|---|
+| [sample-1.wav](results/sample-1.wav) | 您好，请问注册一家公司的费用是多少？ |
+| [sample-2.wav](results/sample-2.wav) | 大概两千多元，具体要看公司的情况。 |
+| [sample-3.wav](results/sample-3.wav) | 不是三千元，是两千五百元，不包含刻章费用。 |
+| [sample-4.wav](results/sample-4.wav) | 需要身份证和经营地址证明。 |
+| [sample-5.wav](results/sample-5.wav) | 材料齐全以后，大约五个工作日可以办理完成。 |
+
+这些音频由本地 MeloTTS 生成，不是真人录音。重新运行脚本会覆盖本地同名音频；
+仓库提交的音频对应 baseline.json 所记录的首次测试。
 
 ## 推荐 LLM
 
