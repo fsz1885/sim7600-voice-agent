@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - run: pip install -r requirements.lock
+      - run: pip install --no-deps --no-build-isolation .
+      - run: voice-agent lint
+      - run: voice-agent test
+      - run: voice-agent demo examples/company-registration.json
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build
+      - run: docker compose run --rm -T app test
+      - run: docker compose run --rm -T app lint
+      - run: docker compose run --rm -T app demo examples/company-registration.json

@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+    stdin_open: true
+    tty: true

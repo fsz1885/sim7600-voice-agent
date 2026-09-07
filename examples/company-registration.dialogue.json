@@ -1,0 +1,102 @@
+[
+  {
+    "user": "可以提供。",
+    "updates": [
+      {
+        "field": "是否可以提供注册地址",
+        "value": "是",
+        "status": "confirmed",
+        "evidence": "可以提供。"
+      }
+    ]
+  },
+  {
+    "user": "地址本身免费，但是必须在我们这里做代理记账，不用实际办公。",
+    "updates": [
+      {
+        "field": "注册地址费用",
+        "value": "免费（须绑定代理记账）",
+        "status": "confirmed",
+        "evidence": "地址本身免费，但是必须在我们这里做代理记账，不用实际办公。"
+      },
+      {
+        "field": "是否强制绑定代理记账",
+        "value": "是",
+        "status": "confirmed",
+        "evidence": "地址本身免费，但是必须在我们这里做代理记账，不用实际办公。"
+      },
+      {
+        "field": "是否要求实际办公",
+        "value": "否",
+        "status": "confirmed",
+        "evidence": "地址本身免费，但是必须在我们这里做代理记账，不用实际办公。"
+      }
+    ]
+  },
+  {
+    "user": "大概两千多吧。",
+    "updates": [
+      {
+        "field": "代理记账价格",
+        "value": "大概两千多，币种和计费周期待确认",
+        "status": "partial",
+        "evidence": "大概两千多吧。"
+      }
+    ]
+  },
+  {
+    "user": "确定是每年2400元人民币。",
+    "updates": [
+      {
+        "field": "代理记账价格",
+        "value": "2400元/年",
+        "status": "confirmed",
+        "evidence": "确定是每年2400元人民币。"
+      }
+    ]
+  },
+  {
+    "user": "可以协助银行开户，但是否通过由银行审核。",
+    "updates": [
+      {
+        "field": "银行开户支持",
+        "value": "支持协助开户，最终由银行审核",
+        "status": "confirmed",
+        "evidence": "可以协助银行开户，但是否通过由银行审核。"
+      }
+    ]
+  },
+  {
+    "user": "支持ICP备案，需要按主管部门要求提交材料。",
+    "updates": [
+      {
+        "field": "ICP备案支持",
+        "value": "支持，须按主管部门要求提交材料",
+        "status": "confirmed",
+        "evidence": "支持ICP备案，需要按主管部门要求提交材料。"
+      }
+    ]
+  },
+  {
+    "user": "需要法人和股东身份证、公司名称、经营范围、注册资本和持股比例。",
+    "updates": [
+      {
+        "field": "所需材料",
+        "value": "法人和股东身份证、公司名称、经营范围、注册资本、持股比例",
+        "status": "confirmed",
+        "evidence": "需要法人和股东身份证、公司名称、经营范围、注册资本和持股比例。"
+      }
+    ]
+  },
+  {
+    "user": "材料齐全后5到7个工作日。",
+    "updates": [
+      {
+        "field": "注册周期",
+        "value": "材料齐全后5–7个工作日",
+        "status": "confirmed",
+        "evidence": "材料齐全后5到7个工作日。"
+      }
+    ]
+  }
+]
