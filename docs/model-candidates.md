@@ -98,6 +98,10 @@ license 和 hash 需在下载时记录。原始模型卡不等于指定第三方
 
 ## RTX 4060 追加选型
 
+后续单卡方案见 [单卡 4060 与本地 ASR/TTS 评估](speech-evaluation/README.md)：
+包含三个 LLM 的上下文容量估算、CPU 语音基线实测、原始记录与复现脚本。
+其中 4060 容量仍为估算；语音测试没有调用 LLM，不是端到端电话延迟测试。
+
 用户另有一张闲置 RTX 4060 可用，以下按标准桌面版 **8GB 显存**设计，
 不是此前已检测到的 GTX 1650。尚未安装或检测这张卡，也没有在其上运行模型。
 [NVIDIA 规格](https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4060-4060ti/)

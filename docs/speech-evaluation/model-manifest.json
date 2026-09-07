@@ -1,0 +1,14 @@
+[
+  {
+    "name": "sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16.tar.bz2",
+    "sha256": "2b7c63322b32e5e0f2526043a1103366119ca58dd615cd7105a37c01db9553d7",
+    "archive_bytes": 458187351
+  },
+  {
+    "name": "vits-melo-tts-zh_en",
+    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-melo-tts-zh_en.tar.bz2",
+    "sha256": "e58351ed7149f290a54534538badd4077cdbe6fddc964b24d0bee870415d1514",
+    "archive_bytes": 167006755
+  }
+]

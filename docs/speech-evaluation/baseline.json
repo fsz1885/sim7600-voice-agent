@@ -1,0 +1,227 @@
+{
+  "runtime": "1.13.7",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "provider": "cpu",
+  "threads_per_model": 2,
+  "load_s": {
+    "asr": 1.2967642999992677,
+    "tts": 4.32344970000122
+  },
+  "note": "Synthetic loopback smoke test; no LLM, VAD, microphone, playback or real-time pacing. Not an ASR accuracy benchmark or end-to-end voice latency.",
+  "cases": [
+    {
+      "input_text": "您好，请问注册一家公司的费用是多少？",
+      "tts_full_sentence_s": 1.7785736000005272,
+      "audio_s": 3.0882539682539685,
+      "tts_rtf": 0.5759155879935918,
+      "asr": {
+        "text": "你好请问注册一家公司的费用是多少",
+        "compute_s": 0.20722769999883894,
+        "audio_s": 3.0882539682539685,
+        "rtf": 0.06710189710077535,
+        "partials": [
+          {
+            "audio_position_s": 0.42,
+            "text": "你好"
+          },
+          {
+            "audio_position_s": 1.38,
+            "text": "你好请问注册"
+          },
+          {
+            "audio_position_s": 2.02,
+            "text": "你好请问注册一家"
+          },
+          {
+            "audio_position_s": 2.34,
+            "text": "你好请问注册一家公司的"
+          },
+          {
+            "audio_position_s": 2.66,
+            "text": "你好请问注册一家公司的费用"
+          },
+          {
+            "audio_position_s": 2.98,
+            "text": "你好请问注册一家公司的费用是多"
+          }
+        ]
+      }
+    },
+    {
+      "input_text": "大概两千多元，具体要看公司的情况。",
+      "tts_full_sentence_s": 1.9033636000003753,
+      "audio_s": 3.0510430839002267,
+      "tts_rtf": 0.6238402892584711,
+      "asr": {
+        "text": "大概两千多元笔体要看公司的情况",
+        "compute_s": 0.21102070000051754,
+        "audio_s": 3.0510430839002267,
+        "rtf": 0.06916346121561953,
+        "partials": [
+          {
+            "audio_position_s": 0.42,
+            "text": "大"
+          },
+          {
+            "audio_position_s": 0.74,
+            "text": "大概两"
+          },
+          {
+            "audio_position_s": 1.06,
+            "text": "大概两千多"
+          },
+          {
+            "audio_position_s": 1.38,
+            "text": "大概两千多元"
+          },
+          {
+            "audio_position_s": 1.7,
+            "text": "大概两千多元笔"
+          },
+          {
+            "audio_position_s": 2.02,
+            "text": "大概两千多元笔体要"
+          },
+          {
+            "audio_position_s": 2.34,
+            "text": "大概两千多元笔体要看公"
+          },
+          {
+            "audio_position_s": 2.66,
+            "text": "大概两千多元笔体要看公司的"
+          },
+          {
+            "audio_position_s": 2.98,
+            "text": "大概两千多元笔体要看公司的情况"
+          }
+        ]
+      }
+    },
+    {
+      "input_text": "不是三千元，是两千五百元，不包含刻章费用。",
+      "tts_full_sentence_s": 2.2098985000011453,
+      "audio_s": 3.7500226757369615,
+      "tts_rtf": 0.5893027032341482,
+      "asr": {
+        "text": "不是三千元是两千五百元五包含刻",
+        "compute_s": 0.2421165000014298,
+        "audio_s": 3.7500226757369615,
+        "rtf": 0.06456400959064831,
+        "partials": [
+          {
+            "audio_position_s": 0.42,
+            "text": "不"
+          },
+          {
+            "audio_position_s": 0.74,
+            "text": "不是"
+          },
+          {
+            "audio_position_s": 1.06,
+            "text": "不是三千元"
+          },
+          {
+            "audio_position_s": 1.7,
+            "text": "不是三千元是"
+          },
+          {
+            "audio_position_s": 2.02,
+            "text": "不是三千元是两千"
+          },
+          {
+            "audio_position_s": 2.34,
+            "text": "不是三千元是两千五百元"
+          },
+          {
+            "audio_position_s": 2.98,
+            "text": "不是三千元是两千五百元五包"
+          },
+          {
+            "audio_position_s": 3.3,
+            "text": "不是三千元是两千五百元五包含刻"
+          }
+        ]
+      }
+    },
+    {
+      "input_text": "需要身份证和经营地址证明。",
+      "tts_full_sentence_s": 1.2919220000003406,
+      "audio_s": 2.2175056689342405,
+      "tts_rtf": 0.5826014418358866,
+      "asr": {
+        "text": "需要身份证和经营地址证明",
+        "compute_s": 0.17274799999904644,
+        "audio_s": 2.2175056689342405,
+        "rtf": 0.07790194289878465,
+        "partials": [
+          {
+            "audio_position_s": 0.74,
+            "text": "需要"
+          },
+          {
+            "audio_position_s": 1.06,
+            "text": "需要身份证"
+          },
+          {
+            "audio_position_s": 1.38,
+            "text": "需要身份证和经"
+          },
+          {
+            "audio_position_s": 1.7,
+            "text": "需要身份证和经营"
+          },
+          {
+            "audio_position_s": 2.02,
+            "text": "需要身份证和经营地址"
+          }
+        ]
+      }
+    },
+    {
+      "input_text": "材料齐全以后，大约五个工作日可以办理完成。",
+      "tts_full_sentence_s": 1.9048053000005893,
+      "audio_s": 3.657142857142857,
+      "tts_rtf": 0.5208451992189111,
+      "asr": {
+        "text": "齐全以后大约五个工作日可以办理完成",
+        "compute_s": 0.24222220000046946,
+        "audio_s": 3.657142857142857,
+        "rtf": 0.06623263281262837,
+        "partials": [
+          {
+            "audio_position_s": 1.06,
+            "text": "齐全"
+          },
+          {
+            "audio_position_s": 1.38,
+            "text": "齐全以后"
+          },
+          {
+            "audio_position_s": 2.02,
+            "text": "齐全以后大约"
+          },
+          {
+            "audio_position_s": 2.34,
+            "text": "齐全以后大约五个"
+          },
+          {
+            "audio_position_s": 2.66,
+            "text": "齐全以后大约五个工作"
+          },
+          {
+            "audio_position_s": 2.98,
+            "text": "齐全以后大约五个工作日可"
+          },
+          {
+            "audio_position_s": 3.3,
+            "text": "齐全以后大约五个工作日可以办"
+          },
+          {
+            "audio_position_s": 3.62,
+            "text": "齐全以后大约五个工作日可以办理完"
+          }
+        ]
+      }
+    }
+  ]
+}

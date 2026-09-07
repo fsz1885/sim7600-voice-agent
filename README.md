@@ -219,10 +219,14 @@ CI 自动执行 Python 3.11 / 3.12 / 3.13 的测试、lint、离线示例，以�
 
 ## 当前能力与下一阶段
 
+评估报告：[Kimi 实测](docs/kimi-evaluation.md)、[模型候选](docs/model-candidates.md)、
+[单卡 4060 选型与本地 ASR/TTS 实测](docs/speech-evaluation/README.md)。
+语音评估提供独立的 CPU 脚本与原始结果，尚未接入 Agent 实时链路。
+
 已实现独立状态、可替换 Provider、每轮结构化决策、自然结束、结果证据、离线交互及完整演示、
 Docker、固定依赖、MIT License 和基础 CI。
 
 建议下一阶段先建立真实模型评测集，覆盖复杂条件、否定、插话、矛盾、未知、不适用和金额单位，
 测量完成率、重复询问率和延迟，再接语音。未来 ASR 把最终转写传给 `user_text`，
 TTS 消费 `decision.response`，电话适配层根据 finish / handoff 管理通话；
-SIM7600 仅属于电话适配层，不进入 Agent Core。当前没有实现任何这些硬件或语音模块。
+SIM7600 仅属于电话适配层，不进入 Agent Core。当前没有实现电话硬件适配或 Agent 实时语音集成。
