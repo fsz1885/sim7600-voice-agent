@@ -1,7 +1,26 @@
 # sim7600-voice-agent
 
-目标驱动的 AI 电话助手的软件 MVP：**Agent Core + Docker + 文本对话模拟器**。
-当前不包含硬件、音频、ASR、TTS、SIP、数据库或 Web 服务。
+目标驱动的 AI 电话助手：**Agent Core + 文本模拟器 + 可选本地语音控制台**。
+本地控制台支持 Ollama、中文 ASR/TTS、麦克风分轮录音和全过程展示。
+当前不包含 SIM7600 硬件适配、真实拨号、SIP、全双工或回声消除。
+
+## Windows + RTX 4060 本地运行
+
+完整安装、启动、使用与限制见 [本地部署指南](docs/local-deployment.md)。
+基础 Docker / CLI 仍不需要语音依赖；控制台使用独立的 `requirements-local.lock`。
+运行本地服务后访问 `http://127.0.0.1:8765`，可以查看目标、对话、字段证据、
+每轮阶段耗时与音频，确认转写后提交给 Agent。模型和语音均在本机处理，不需要 API Key。
+
+```powershell
+uv venv .venv --python 3.12
+uv pip install --python .venv/Scripts/python.exe -r requirements-local.lock
+uv pip install --python .venv/Scripts/python.exe --no-deps --no-build-isolation -e .
+# 先按部署指南安装 Ollama、LLM 与语音模型，再运行：
+.\scripts\start-local.ps1
+```
+
+界面明确区分“本地大模型”和“规则模拟”，二者都不是实际电话线路。
+录音与过程快照保存在被 Git 忽略的 `local-data/`，模型在 `models/`。
 
 输入任务目标、必要字段、独立状态和文本回复，输出结构化决策以及可追溯的最终结果。
 真实 LLM 根据目标、历史和状态动态选择问题；Core 不包含公司注册场景的固定决策树。
@@ -221,7 +240,8 @@ CI 自动执行 Python 3.11 / 3.12 / 3.13 的测试、lint、离线示例，以�
 
 评估报告：[Kimi 实测](docs/kimi-evaluation.md)、[模型候选](docs/model-candidates.md)、
 [单卡 4060 选型与本地 ASR/TTS 实测](docs/speech-evaluation/README.md)。
-语音评估提供独立的 CPU 脚本与原始结果，尚未接入 Agent 实时链路。
+语音评估提供独立的 CPU 脚本与原始结果；本地控制台新增分轮 ASR → Core → TTS 链路，
+仍未接入实时电话硬件。历史评估报告描述当时的版本与机器环境。
 
 已实现独立状态、可替换 Provider、每轮结构化决策、自然结束、结果证据、离线交互及完整演示、
 Docker、固定依赖、MIT License 和基础 CI。
@@ -229,4 +249,4 @@ Docker、固定依赖、MIT License 和基础 CI。
 建议下一阶段先建立真实模型评测集，覆盖复杂条件、否定、插话、矛盾、未知、不适用和金额单位，
 测量完成率、重复询问率和延迟，再接语音。未来 ASR 把最终转写传给 `user_text`，
 TTS 消费 `decision.response`，电话适配层根据 finish / handoff 管理通话；
-SIM7600 仅属于电话适配层，不进入 Agent Core。当前没有实现电话硬件适配或 Agent 实时语音集成。
+SIM7600 仅属于电话适配层，不进入 Agent Core。当前没有实现电话硬件适配和全双工语音。

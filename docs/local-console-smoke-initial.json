@@ -1,0 +1,403 @@
+{
+  "method": "Real local HTTP + LLM + CPU TTS-to-ASR synthetic loopback. No browser microphone or physical speaker tested.",
+  "health": {
+    "model": "qwen3.5:4b",
+    "llm": true,
+    "running_models": [
+      {
+        "name": "qwen3.5:4b",
+        "size": 3341958511,
+        "size_vram": 3341958511
+      }
+    ],
+    "speech": {
+      "asr": true,
+      "tts": true
+    },
+    "transport": "本地模拟 · 未连接电话线路",
+    "context": 8192
+  },
+  "session": {
+    "id": "564a29540e8447aa83f09d18bf0f8e6e",
+    "mode": "local",
+    "transport": "local_simulation",
+    "stopped": false,
+    "busy": false,
+    "state": {
+      "task": {
+        "goal": "确认费用与所需材料",
+        "required_fields": [
+          "费用",
+          "所需材料"
+        ]
+      },
+      "history": [
+        {
+          "role": "assistant",
+          "content": "请问办理该业务需要哪些所需材料？"
+        },
+        {
+          "role": "user",
+          "content": "费用大概2000多，具体我还不确定。"
+        },
+        {
+          "role": "assistant",
+          "content": "费用方面您提到大概2000多，具体金额是否确定？"
+        },
+        {
+          "role": "user",
+          "content": "费用确定为每年2400元，所需材料是法人身份证。"
+        },
+        {
+          "role": "assistant",
+          "content": "请问办理该业务还需要哪些其他所需材料？"
+        }
+      ],
+      "fields": {
+        "费用": {
+          "status": "confirmed",
+          "value": "每年2400元",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            },
+            {
+              "turn": 2,
+              "quote": "费用确定为每年2400元"
+            }
+          ]
+        },
+        "所需材料": {
+          "status": "partial",
+          "value": "法人身份证",
+          "evidence": [
+            {
+              "turn": 2,
+              "quote": "所需材料是法人身份证"
+            }
+          ]
+        }
+      },
+      "status": "active",
+      "current_decision": {
+        "response": "请问办理该业务还需要哪些其他所需材料？",
+        "action": "clarify",
+        "target_field": "所需材料",
+        "updates": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年2400元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              },
+              {
+                "turn": 2,
+                "quote": "费用确定为每年2400元"
+              }
+            ]
+          },
+          "所需材料": {
+            "status": "partial",
+            "value": "法人身份证",
+            "evidence": [
+              {
+                "turn": 2,
+                "quote": "所需材料是法人身份证"
+              }
+            ]
+          }
+        },
+        "reason": "费用已明确为每年2400元，所需材料已知但可能不完整，需继续确认。"
+      },
+      "final_result": null,
+      "turns": 2,
+      "stalled_turns": 0
+    },
+    "result": {
+      "completed": false,
+      "status": "active",
+      "goal": "确认费用与所需材料",
+      "fields": {
+        "费用": "每年2400元",
+        "所需材料": "法人身份证"
+      },
+      "field_details": {
+        "费用": {
+          "status": "confirmed",
+          "value": "每年2400元",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            },
+            {
+              "turn": 2,
+              "quote": "费用确定为每年2400元"
+            }
+          ]
+        },
+        "所需材料": {
+          "status": "partial",
+          "value": "法人身份证",
+          "evidence": [
+            {
+              "turn": 2,
+              "quote": "所需材料是法人身份证"
+            }
+          ]
+        }
+      },
+      "missing_fields": [
+        "所需材料"
+      ]
+    },
+    "events": [
+      {
+        "id": 1,
+        "time": 1788862517.1733613,
+        "stage": "session",
+        "status": "done",
+        "label": "本地语音会话开始"
+      },
+      {
+        "id": 2,
+        "time": 1788862517.1753626,
+        "stage": "llm",
+        "status": "running",
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 3,
+        "time": 1788862518.715602,
+        "stage": "llm",
+        "status": "done",
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 1540,
+        "action": "continue"
+      },
+      {
+        "id": 4,
+        "time": 1788862518.715602,
+        "stage": "fields",
+        "status": "done",
+        "label": "字段与证据",
+        "updates": {},
+        "reason": "初始状态，需先获取所需材料信息。"
+      },
+      {
+        "id": 5,
+        "time": 1788862518.715602,
+        "stage": "reply",
+        "status": "done",
+        "label": "助手回复",
+        "text": "请问办理该业务需要哪些所需材料？",
+        "action": "continue"
+      },
+      {
+        "id": 6,
+        "time": 1788862518.717153,
+        "stage": "tts",
+        "status": "running",
+        "label": "合成中文回复"
+      },
+      {
+        "id": 7,
+        "time": 1788862520.6109183,
+        "stage": "tts",
+        "status": "done",
+        "label": "回复音频就绪",
+        "duration_ms": 1895,
+        "audio": "/api/sessions/564a29540e8447aa83f09d18bf0f8e6e/audio/88c73d8e1b734d2eb5d4061c43bf7b31.wav"
+      },
+      {
+        "id": 8,
+        "time": 1788862522.6224353,
+        "stage": "asr",
+        "status": "running",
+        "label": "识别本地录音"
+      },
+      {
+        "id": 9,
+        "time": 1788862524.0244746,
+        "stage": "asr",
+        "status": "done",
+        "label": "转写待确认",
+        "text": "费用大概2000多，具体我还不确定。",
+        "audio": "/api/sessions/564a29540e8447aa83f09d18bf0f8e6e/audio/6d5f2cc42bdd47e39aedf838d412fe35.wav",
+        "duration_ms": 1401
+      },
+      {
+        "id": 10,
+        "time": 1788862524.0287714,
+        "stage": "input",
+        "status": "done",
+        "label": "已提交对方回答",
+        "text": "费用大概2000多，具体我还不确定。"
+      },
+      {
+        "id": 11,
+        "time": 1788862524.0287714,
+        "stage": "llm",
+        "status": "running",
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 12,
+        "time": 1788862526.9370139,
+        "stage": "llm",
+        "status": "done",
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 2908,
+        "action": "clarify"
+      },
+      {
+        "id": 13,
+        "time": 1788862526.9370139,
+        "stage": "fields",
+        "status": "done",
+        "label": "字段与证据",
+        "updates": {
+          "费用": {
+            "status": "partial",
+            "value": "2000多",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              }
+            ]
+          }
+        },
+        "reason": "用户明确表示费用不确定，当前状态为 partial，需澄清具体金额。所需材料仍未知，但根据指令每轮仅询问一个核心问题，故优先处理费用字段。"
+      },
+      {
+        "id": 14,
+        "time": 1788862526.9370139,
+        "stage": "reply",
+        "status": "done",
+        "label": "助手回复",
+        "text": "费用方面您提到大概2000多，具体金额是否确定？",
+        "action": "clarify"
+      },
+      {
+        "id": 15,
+        "time": 1788862526.938058,
+        "stage": "tts",
+        "status": "running",
+        "label": "合成中文回复"
+      },
+      {
+        "id": 16,
+        "time": 1788862527.2036402,
+        "stage": "tts",
+        "status": "done",
+        "label": "回复音频就绪",
+        "duration_ms": 267,
+        "audio": "/api/sessions/564a29540e8447aa83f09d18bf0f8e6e/audio/51e280f243cf46dfb9a5fbd72792dd61.wav"
+      },
+      {
+        "id": 17,
+        "time": 1788862527.5970747,
+        "stage": "asr",
+        "status": "running",
+        "label": "识别本地录音"
+      },
+      {
+        "id": 18,
+        "time": 1788862527.8092418,
+        "stage": "asr",
+        "status": "done",
+        "label": "转写待确认",
+        "text": "费用确定为每年2400元，所需材料是法人身份证。",
+        "audio": "/api/sessions/564a29540e8447aa83f09d18bf0f8e6e/audio/36a2c40fc65b46ad9fa721cda3e6cdd5.wav",
+        "duration_ms": 212
+      },
+      {
+        "id": 19,
+        "time": 1788862527.8133996,
+        "stage": "input",
+        "status": "done",
+        "label": "已提交对方回答",
+        "text": "费用确定为每年2400元，所需材料是法人身份证。"
+      },
+      {
+        "id": 20,
+        "time": 1788862527.8133996,
+        "stage": "llm",
+        "status": "running",
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 21,
+        "time": 1788862531.0862541,
+        "stage": "llm",
+        "status": "done",
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 3273,
+        "action": "clarify"
+      },
+      {
+        "id": 22,
+        "time": 1788862531.0862541,
+        "stage": "fields",
+        "status": "done",
+        "label": "字段与证据",
+        "updates": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年2400元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              },
+              {
+                "turn": 2,
+                "quote": "费用确定为每年2400元"
+              }
+            ]
+          },
+          "所需材料": {
+            "status": "partial",
+            "value": "法人身份证",
+            "evidence": [
+              {
+                "turn": 2,
+                "quote": "所需材料是法人身份证"
+              }
+            ]
+          }
+        },
+        "reason": "费用已明确为每年2400元，所需材料已知但可能不完整，需继续确认。"
+      },
+      {
+        "id": 23,
+        "time": 1788862531.0862541,
+        "stage": "reply",
+        "status": "done",
+        "label": "助手回复",
+        "text": "请问办理该业务还需要哪些其他所需材料？",
+        "action": "clarify"
+      },
+      {
+        "id": 24,
+        "time": 1788862531.0879915,
+        "stage": "tts",
+        "status": "running",
+        "label": "合成中文回复"
+      },
+      {
+        "id": 25,
+        "time": 1788862531.2999454,
+        "stage": "tts",
+        "status": "done",
+        "label": "回复音频就绪",
+        "duration_ms": 212,
+        "audio": "/api/sessions/564a29540e8447aa83f09d18bf0f8e6e/audio/4153144e8a884488888938f8764badfd.wav"
+      }
+    ]
+  }
+}

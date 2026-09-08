@@ -1,0 +1,473 @@
+{
+  "model": "qwen3:4b-instruct-2507-q4_K_M",
+  "context": 8192,
+  "method": "Synthetic written scenarios; TTS-to-ASR loopback, not real phone data. Durations include cold loads and repairs; no browser playback latency.",
+  "passed": 1,
+  "cases": [
+    {
+      "name": "不确定",
+      "passed": true,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "您好，请提供您想了解的费用或材料相关信息。",
+            "action": "continue",
+            "target_field": "费用",
+            "updates": {},
+            "reason": "尚未收到用户最新消息，无法提取任何信息进行更新。"
+          },
+          "seconds": 46.71649689999958
+        },
+        {
+          "text": "大概两千多，具体我不确定。",
+          "decision": {
+            "response": "抱歉，刚才的信息暂时没能处理好，请您再说一次。",
+            "action": "retry",
+            "target_field": null,
+            "updates": {},
+            "reason": "Provider failed or proposal did not pass validation; fields preserved"
+          },
+          "seconds": 3.9588330999999926
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认费用、材料",
+        "fields": {
+          "费用": null,
+          "材料": null
+        },
+        "field_details": {
+          "费用": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          },
+          "材料": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          }
+        },
+        "missing_fields": [
+          "费用",
+          "材料"
+        ]
+      }
+    },
+    {
+      "name": "更正",
+      "passed": false,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "抱歉，刚才的信息暂时没能处理好，请您再说一次。",
+            "action": "retry",
+            "target_field": null,
+            "updates": {},
+            "reason": "Provider failed or proposal did not pass validation; fields preserved"
+          },
+          "seconds": 3.366621699999996
+        },
+        {
+          "text": "费用是每年三千元。",
+          "decision": {
+            "response": "抱歉，刚才的信息暂时没能处理好，请您再说一次。",
+            "action": "retry",
+            "target_field": null,
+            "updates": {},
+            "reason": "Provider failed or proposal did not pass validation; fields preserved"
+          },
+          "seconds": 4.631614500000069
+        },
+        {
+          "text": "刚才说错了，不是三千，是每年两千五百元。",
+          "decision": {
+            "response": "抱歉，刚才的信息暂时没能处理好，请您再说一次。",
+            "action": "retry",
+            "target_field": null,
+            "updates": {},
+            "reason": "Provider failed or proposal did not pass validation; fields preserved"
+          },
+          "seconds": 4.273619300000064
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认费用、材料",
+        "fields": {
+          "费用": null,
+          "材料": null
+        },
+        "field_details": {
+          "费用": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          },
+          "材料": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          }
+        },
+        "missing_fields": [
+          "费用",
+          "材料"
+        ]
+      }
+    },
+    {
+      "name": "否定",
+      "passed": false,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "请提供您关于实际办公或材料的具体信息，以便我准确记录。",
+            "action": "clarify",
+            "target_field": "实际办公",
+            "updates": {},
+            "reason": "当前未收到用户最新消息，无法进行任何字段更新或提问，需先获取有效用户输入。"
+          },
+          "seconds": 2.5663018999998712
+        },
+        {
+          "text": "不要求实际办公，材料我还不清楚。",
+          "decision": {
+            "response": "关于材料，您能具体说明需要哪些材料吗？",
+            "action": "clarify",
+            "target_field": "材料",
+            "updates": {
+              "材料": {
+                "status": "partial",
+                "value": "材料我还不清楚。",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "材料我还不清楚。"
+                  }
+                ]
+              }
+            },
+            "reason": "用户明确表示不要求实际办公，已确认该字段为不适用（因无实际办公需求）；材料信息仍为未知，需进一步澄清具体材料内容。"
+          },
+          "seconds": 2.1839180999995733
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认实际办公、材料",
+        "fields": {
+          "实际办公": null,
+          "材料": "材料我还不清楚。"
+        },
+        "field_details": {
+          "实际办公": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          },
+          "材料": {
+            "status": "partial",
+            "value": "材料我还不清楚。",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "材料我还不清楚。"
+              }
+            ]
+          }
+        },
+        "missing_fields": [
+          "实际办公",
+          "材料"
+        ]
+      }
+    },
+    {
+      "name": "条件与完成",
+      "passed": false,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "您好，请问您最近是否收到关于地址费用或是否需要强制绑定代理记账的相关信息？",
+            "action": "clarify",
+            "target_field": "地址费用",
+            "updates": {},
+            "reason": "尚未收到用户最新消息，无法确定地址费用或是否强制代理记账，需先获取用户最新输入以启动对话。"
+          },
+          "seconds": 1.5604201000001012
+        },
+        {
+          "text": "地址免费，但必须在这里购买代理记账服务。",
+          "decision": {
+            "response": "抱歉，刚才的信息暂时没能处理好，请您再说一次。",
+            "action": "retry",
+            "target_field": null,
+            "updates": {},
+            "reason": "Provider failed or proposal did not pass validation; fields preserved"
+          },
+          "seconds": 6.59905660000004
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认地址费用、是否强制代理记账",
+        "fields": {
+          "地址费用": null,
+          "是否强制代理记账": null
+        },
+        "field_details": {
+          "地址费用": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          },
+          "是否强制代理记账": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          }
+        },
+        "missing_fields": [
+          "地址费用",
+          "是否强制代理记账"
+        ]
+      }
+    },
+    {
+      "name": "明确不适用",
+      "passed": false,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "您好，请提供您想了解的银行开户费用相关信息。",
+            "action": "continue",
+            "target_field": "银行开户费用",
+            "updates": {},
+            "reason": "尚未收到用户最新消息，无法提取任何关于银行开户费用的信息。"
+          },
+          "seconds": 1.2043676999996933
+        },
+        {
+          "text": "不提供银行开户服务，所以银行开户费用不适用。",
+          "decision": {
+            "response": "抱歉，刚才的信息暂时没能处理好，请您再说一次。",
+            "action": "retry",
+            "target_field": null,
+            "updates": {},
+            "reason": "Provider failed or proposal did not pass validation; fields preserved"
+          },
+          "seconds": 4.302813700000115
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认银行开户费用",
+        "fields": {
+          "银行开户费用": null
+        },
+        "field_details": {
+          "银行开户费用": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          }
+        },
+        "missing_fields": [
+          "银行开户费用"
+        ]
+      }
+    }
+  ],
+  "median_decision_seconds": 3.9588330999999926,
+  "max_decision_seconds": 46.71649689999958,
+  "calls": [
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 46436370200,
+      "load_duration": 26022740600,
+      "prompt_eval_count": 500,
+      "prompt_eval_duration": 17771473000,
+      "eval_count": 58,
+      "eval_duration": 2602904000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1691372900,
+      "load_duration": 3592200,
+      "prompt_eval_count": 550,
+      "prompt_eval_duration": 31909000,
+      "eval_count": 119,
+      "eval_duration": 1635404000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1808129100,
+      "load_duration": 1712300,
+      "prompt_eval_count": 590,
+      "prompt_eval_duration": 25362000,
+      "eval_count": 129,
+      "eval_duration": 1760879000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1427071700,
+      "load_duration": 1632600,
+      "prompt_eval_count": 500,
+      "prompt_eval_duration": 20216000,
+      "eval_count": 93,
+      "eval_duration": 1384942000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1502915800,
+      "load_duration": 1124700,
+      "prompt_eval_count": 540,
+      "prompt_eval_duration": 23099000,
+      "eval_count": 99,
+      "eval_duration": 1458515000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1816907800,
+      "load_duration": 1120300,
+      "prompt_eval_count": 547,
+      "prompt_eval_duration": 28065000,
+      "eval_count": 127,
+      "eval_duration": 1768787000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 2375581300,
+      "load_duration": 1742800,
+      "prompt_eval_count": 587,
+      "prompt_eval_duration": 22622000,
+      "eval_count": 159,
+      "eval_duration": 2331235000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 2143574000,
+      "load_duration": 1953300,
+      "prompt_eval_count": 602,
+      "prompt_eval_duration": 29931000,
+      "eval_count": 148,
+      "eval_duration": 2090166000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1677736600,
+      "load_duration": 1681000,
+      "prompt_eval_count": 642,
+      "prompt_eval_duration": 22227000,
+      "eval_count": 114,
+      "eval_duration": 1633316000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1003927400,
+      "load_duration": 1468300,
+      "prompt_eval_count": 503,
+      "prompt_eval_duration": 31524000,
+      "eval_count": 66,
+      "eval_duration": 948974000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1088329900,
+      "load_duration": 1574100,
+      "prompt_eval_count": 543,
+      "prompt_eval_duration": 25104000,
+      "eval_count": 73,
+      "eval_duration": 1040318000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1933879200,
+      "load_duration": 1534600,
+      "prompt_eval_count": 561,
+      "prompt_eval_duration": 31872000,
+      "eval_count": 125,
+      "eval_duration": 1879004000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1349954100,
+      "load_duration": 1501100,
+      "prompt_eval_count": 515,
+      "prompt_eval_duration": 32695999,
+      "eval_count": 84,
+      "eval_duration": 1296837000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 2921779500,
+      "load_duration": 1179900,
+      "prompt_eval_count": 582,
+      "prompt_eval_duration": 32878000,
+      "eval_count": 195,
+      "eval_duration": 2863670000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 3224249900,
+      "load_duration": 1536400,
+      "prompt_eval_count": 622,
+      "prompt_eval_duration": 24332000,
+      "eval_count": 212,
+      "eval_duration": 3176449000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 997985500,
+      "load_duration": 1086200,
+      "prompt_eval_count": 481,
+      "prompt_eval_duration": 28399000,
+      "eval_count": 62,
+      "eval_duration": 948304000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 1651513000,
+      "load_duration": 1084100,
+      "prompt_eval_count": 541,
+      "prompt_eval_duration": 31663000,
+      "eval_count": 109,
+      "eval_duration": 1598300000
+    },
+    {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "total_duration": 2235891800,
+      "load_duration": 1596000,
+      "prompt_eval_count": 581,
+      "prompt_eval_duration": 24156000,
+      "eval_count": 152,
+      "eval_duration": 2189702000
+    }
+  ],
+  "speech": [
+    {
+      "synthetic_input": "您好，请问注册地址的费用是多少？",
+      "transcript": "您好，请问注册地址的费用是多少？",
+      "tts_seconds": 2.2025346000000354,
+      "asr_seconds": 1.5626971000001504
+    },
+    {
+      "synthetic_input": "不是三千元，是每年两千五百元，不包含刻章费用。",
+      "transcript": "不是3000元，是每年2500元，不包含客章费用。",
+      "tts_seconds": 0.24978109999983644,
+      "asr_seconds": 0.17011130000037156
+    }
+  ]
+}

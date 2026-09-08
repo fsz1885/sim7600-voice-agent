@@ -1,0 +1,533 @@
+{
+  "model": "qwen3.5:4b",
+  "context": 8192,
+  "method": "Synthetic written scenarios; TTS-to-ASR loopback, not real phone data. Durations include cold loads and repairs; no browser playback latency.",
+  "passed": 4,
+  "cases": [
+    {
+      "name": "不确定",
+      "passed": true,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "请问办理业务需要哪些材料？",
+            "action": "continue",
+            "target_field": "材料",
+            "updates": {},
+            "reason": "初始状态，需先确认材料信息"
+          },
+          "seconds": 1.5863191000003098
+        },
+        {
+          "text": "大概两千多，具体我不确定。",
+          "decision": {
+            "response": "费用方面您提到大概两千多，具体金额还需要确认吗？",
+            "action": "clarify",
+            "target_field": "费用",
+            "updates": {
+              "费用": {
+                "status": "partial",
+                "value": "大概两千多",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "大概两千多，具体我不确定。"
+                  }
+                ]
+              },
+              "材料": {
+                "status": "partial",
+                "value": "未知",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "大概两千多，具体我不确定。"
+                  }
+                ]
+              }
+            },
+            "reason": "用户回复中关于费用为'大概两千多'且'具体不确定'，属于部分信息；材料字段虽未直接提及，但结合上下文语境可推断为未知状态。根据规则，partial 状态需使用 clarify 动作进行澄清，且本轮仅针对费用字段提问。"
+          },
+          "seconds": 4.0824190000003
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认费用、材料",
+        "fields": {
+          "费用": "大概两千多",
+          "材料": "未知"
+        },
+        "field_details": {
+          "费用": {
+            "status": "partial",
+            "value": "大概两千多",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "大概两千多，具体我不确定。"
+              }
+            ]
+          },
+          "材料": {
+            "status": "partial",
+            "value": "未知",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "大概两千多，具体我不确定。"
+              }
+            ]
+          }
+        },
+        "missing_fields": [
+          "费用",
+          "材料"
+        ]
+      }
+    },
+    {
+      "name": "更正",
+      "passed": true,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "请问办理业务需要哪些材料？",
+            "action": "continue",
+            "target_field": "材料",
+            "updates": {},
+            "reason": "初始状态，需先确认材料信息"
+          },
+          "seconds": 1.5227265000003172
+        },
+        {
+          "text": "费用是每年三千元。",
+          "decision": {
+            "response": "费用已明确为每年三千元，请问办理业务需要哪些材料？",
+            "action": "clarify",
+            "target_field": "材料",
+            "updates": {
+              "费用": {
+                "status": "confirmed",
+                "value": "每年三千元",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "费用是每年三千元。"
+                  }
+                ]
+              }
+            },
+            "reason": "用户明确回复了费用信息，已更新为 confirmed；材料字段仍未知，需继续询问。"
+          },
+          "seconds": 2.5958958999999595
+        },
+        {
+          "text": "刚才说错了，不是三千，是每年两千五百元。",
+          "decision": {
+            "response": "费用更正为每年两千五百元，请问办理业务需要哪些材料？",
+            "action": "clarify",
+            "target_field": "材料",
+            "updates": {
+              "费用": {
+                "status": "confirmed",
+                "value": "每年两千五百元",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "费用是每年三千元。"
+                  },
+                  {
+                    "turn": 2,
+                    "quote": "刚才说错了，不是三千，是每年两千五百元。"
+                  }
+                ]
+              }
+            },
+            "reason": "用户更正了费用金额，已更新为每年两千五百元并确认为 confirmed；材料字段仍为 unknown，需继续询问。"
+          },
+          "seconds": 2.8310443999998824
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认费用、材料",
+        "fields": {
+          "费用": "每年两千五百元",
+          "材料": null
+        },
+        "field_details": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年两千五百元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用是每年三千元。"
+              },
+              {
+                "turn": 2,
+                "quote": "刚才说错了，不是三千，是每年两千五百元。"
+              }
+            ]
+          },
+          "材料": {
+            "status": "unknown",
+            "value": null,
+            "evidence": []
+          }
+        },
+        "missing_fields": [
+          "材料"
+        ]
+      }
+    },
+    {
+      "name": "否定",
+      "passed": true,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "请问贵单位实际办公地点在哪里？",
+            "action": "continue",
+            "target_field": "实际办公",
+            "updates": {},
+            "reason": "任务开始，需先确认实际办公地点。"
+          },
+          "seconds": 1.613977900000009
+        },
+        {
+          "text": "不要求实际办公，材料我还不清楚。",
+          "decision": {
+            "response": "请问办理所需材料有哪些？",
+            "action": "clarify",
+            "target_field": "材料",
+            "updates": {
+              "实际办公": {
+                "status": "confirmed",
+                "value": "不适用（原因：对方明确表示不要求）",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "不要求实际办公"
+                  }
+                ]
+              },
+              "材料": {
+                "status": "partial",
+                "value": "不清楚",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "材料我还不清楚"
+                  }
+                ]
+              }
+            },
+            "reason": "提取用户最新回复中关于实际办公和材料的明确信息，实际办公已确认为不适用，材料状态为 partial，需继续询问具体材料清单。"
+          },
+          "seconds": 3.3132296000003407
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认实际办公、材料",
+        "fields": {
+          "实际办公": "不适用（原因：对方明确表示不要求）",
+          "材料": "不清楚"
+        },
+        "field_details": {
+          "实际办公": {
+            "status": "confirmed",
+            "value": "不适用（原因：对方明确表示不要求）",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "不要求实际办公"
+              }
+            ]
+          },
+          "材料": {
+            "status": "partial",
+            "value": "不清楚",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "材料我还不清楚"
+              }
+            ]
+          }
+        },
+        "missing_fields": [
+          "材料"
+        ]
+      }
+    },
+    {
+      "name": "条件与完成",
+      "passed": false,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "请问地址费用是多少？",
+            "action": "continue",
+            "target_field": "地址费用",
+            "updates": {},
+            "reason": "当前所有字段均为 unknown，需先确认地址费用。"
+          },
+          "seconds": 1.613000700000157
+        },
+        {
+          "text": "地址免费，但必须在这里购买代理记账服务。",
+          "decision": {
+            "response": "明白了，请问代理记账服务是否强制购买？",
+            "action": "clarify",
+            "target_field": "是否强制代理记账",
+            "updates": {
+              "地址费用": {
+                "status": "confirmed",
+                "value": "免费（须绑定代理记账）",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "地址免费，但必须在这里购买代理记账服务。"
+                  }
+                ]
+              },
+              "是否强制代理记账": {
+                "status": "partial",
+                "value": "必须购买",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "地址免费，但必须在这里购买代理记账服务。"
+                  }
+                ]
+              }
+            },
+            "reason": "提取地址费用为确认状态（含前提条件），提取是否强制代理记账为部分状态（含前提条件），剩余未确认字段为是否强制代理记账。"
+          },
+          "seconds": 3.5771250999996482
+        }
+      ],
+      "result": {
+        "completed": false,
+        "status": "active",
+        "goal": "准确确认地址费用、是否强制代理记账",
+        "fields": {
+          "地址费用": "免费（须绑定代理记账）",
+          "是否强制代理记账": "必须购买"
+        },
+        "field_details": {
+          "地址费用": {
+            "status": "confirmed",
+            "value": "免费（须绑定代理记账）",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "地址免费，但必须在这里购买代理记账服务。"
+              }
+            ]
+          },
+          "是否强制代理记账": {
+            "status": "partial",
+            "value": "必须购买",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "地址免费，但必须在这里购买代理记账服务。"
+              }
+            ]
+          }
+        },
+        "missing_fields": [
+          "是否强制代理记账"
+        ]
+      }
+    },
+    {
+      "name": "明确不适用",
+      "passed": true,
+      "turns": [
+        {
+          "text": null,
+          "decision": {
+            "response": "请问银行开户费用是多少？",
+            "action": "continue",
+            "target_field": "银行开户费用",
+            "updates": {},
+            "reason": "当前所有字段均为未知状态，需主动询问核心目标字段。"
+          },
+          "seconds": 1.60448469999983
+        },
+        {
+          "text": "不提供银行开户服务，所以银行开户费用不适用。",
+          "decision": {
+            "response": "好的，相关信息已经了解清楚了，谢谢您，再见。",
+            "action": "finish",
+            "target_field": null,
+            "updates": {
+              "银行开户费用": {
+                "status": "confirmed",
+                "value": "不适用（原因：不提供银行开户服务）",
+                "evidence": [
+                  {
+                    "turn": 1,
+                    "quote": "不提供银行开户服务，所以银行开户费用不适用。"
+                  }
+                ]
+              }
+            },
+            "reason": "All required fields are confirmed"
+          },
+          "seconds": 2.6570639000001393
+        }
+      ],
+      "result": {
+        "completed": true,
+        "status": "completed",
+        "goal": "准确确认银行开户费用",
+        "fields": {
+          "银行开户费用": "不适用（原因：不提供银行开户服务）"
+        },
+        "field_details": {
+          "银行开户费用": {
+            "status": "confirmed",
+            "value": "不适用（原因：不提供银行开户服务）",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "不提供银行开户服务，所以银行开户费用不适用。"
+              }
+            ]
+          }
+        },
+        "missing_fields": []
+      }
+    }
+  ],
+  "median_decision_seconds": 2.5958958999999595,
+  "max_decision_seconds": 4.0824190000003,
+  "calls": [
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 1380428200,
+      "load_duration": 1815200,
+      "prompt_eval_count": 925,
+      "prompt_eval_duration": 392337000,
+      "eval_count": 56,
+      "eval_duration": 908066000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 3851250400,
+      "load_duration": 1545400,
+      "prompt_eval_count": 970,
+      "prompt_eval_duration": 392393000,
+      "eval_count": 213,
+      "eval_duration": 3448829000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 1314956600,
+      "load_duration": 1769000,
+      "prompt_eval_count": 925,
+      "prompt_eval_duration": 378302000,
+      "eval_count": 56,
+      "eval_duration": 879406000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 2386904500,
+      "load_duration": 1979500,
+      "prompt_eval_count": 966,
+      "prompt_eval_duration": 383105000,
+      "eval_count": 127,
+      "eval_duration": 1994380000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 2618286800,
+      "load_duration": 1620200,
+      "prompt_eval_count": 1042,
+      "prompt_eval_duration": 434458000,
+      "eval_count": 142,
+      "eval_duration": 2174623000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 1386409100,
+      "load_duration": 1675600,
+      "prompt_eval_count": 930,
+      "prompt_eval_duration": 368895000,
+      "eval_count": 60,
+      "eval_duration": 926930000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 3069773400,
+      "load_duration": 1831100,
+      "prompt_eval_count": 980,
+      "prompt_eval_duration": 381483000,
+      "eval_count": 176,
+      "eval_duration": 2678472000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 1356972500,
+      "load_duration": 2073100,
+      "prompt_eval_count": 940,
+      "prompt_eval_duration": 387795000,
+      "eval_count": 59,
+      "eval_duration": 890808000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 3354898300,
+      "load_duration": 1704800,
+      "prompt_eval_count": 987,
+      "prompt_eval_duration": 382657000,
+      "eval_count": 193,
+      "eval_duration": 2962938000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 1374302000,
+      "load_duration": 2050900,
+      "prompt_eval_count": 904,
+      "prompt_eval_duration": 360869000,
+      "eval_count": 63,
+      "eval_duration": 945656000
+    },
+    {
+      "model": "qwen3.5:4b",
+      "total_duration": 2428344500,
+      "load_duration": 1765000,
+      "prompt_eval_count": 954,
+      "prompt_eval_duration": 369705000,
+      "eval_count": 135,
+      "eval_duration": 2048706000
+    }
+  ],
+  "speech": [
+    {
+      "synthetic_input": "您好，请问注册地址的费用是多少？",
+      "transcript": "您好，请问注册地址的费用是多少？",
+      "tts_seconds": 1.9481928000000153,
+      "asr_seconds": 1.3271637999996528
+    },
+    {
+      "synthetic_input": "不是三千元，是每年两千五百元，不包含刻章费用。",
+      "transcript": "不是3000元，是每年2500元，不包含客章费用。",
+      "tts_seconds": 0.32044390000010026,
+      "asr_seconds": 0.23039779999999155
+    }
+  ]
+}

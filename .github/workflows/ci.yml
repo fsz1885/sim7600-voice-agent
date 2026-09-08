@@ -5,6 +5,18 @@ on:
 permissions:
   contents: read
 jobs:
+  local-console:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-local.lock
+      - run: pip install --no-deps --no-build-isolation .
+      - run: python -m pytest -q
+      - run: python -m ruff check src tests scripts
+      - run: node --check src/voice_agent/static/app.js
   test:
     runs-on: ubuntu-latest
     strategy:

@@ -63,6 +63,12 @@ class CustomProvider:
 
 ## 未来语音接入
 
+本地分轮语音控制台现已实现，见 [部署指南](local-deployment.md)。`console.py` 在 Core 外
+串行调度录音转写、用户确认、模型决策、TTS 与事件记录；`speech.py` 延迟加载 CPU 模型，
+`local_provider.py` 负责 Ollama 回环接口。停止时丢弃迟到的状态副本，保持 Core 原子提交语义。
+控制台保存本地音频与 JSON 快照，但不会将旧快照作为不可信输入自动恢复。
+下面的真实电话适配与全双工能力仍待实现。
+
 ```text
 电话适配层（未来 SIM7600 / SIP 等）
    → 音频处理 → ASR 最终转写

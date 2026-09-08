@@ -11,9 +11,11 @@ dependencies = ["pydantic>=2.11,<3", "httpx>=0.28,<1"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.3,<10", "ruff>=0.11,<1", "hatchling==1.27.0", "editables==0.5"]
+local = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "numpy>=2,<3", "scipy>=1.15,<2", "sherpa-onnx==1.13.7", "sherpa-onnx-core==1.13.7", "soundfile>=0.13,<1"]
 
 [project.scripts]
 voice-agent = "voice_agent.cli:main"
+voice-console = "voice_agent.console:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/voice_agent"]

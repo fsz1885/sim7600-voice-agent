@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>声程 · 本地语音控制台</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <aside class="rail">
+      <div class="brand">声<span>程</span><small>VOICE AGENT</small></div>
+      <div class="nav active">◉ &nbsp;通话工作台</div>
+      <div class="rail-bottom">
+        <span class="dot"></span> 本机运行<br /><small
+          >SIM7600 VOICE AGENT</small
+        >
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <div class="eyebrow">LOCAL VOICE WORKSPACE</div>
+          <h1>让每一步对话，都清晰可见。</h1>
+        </div>
+        <span class="transport">本地模拟 · 未连接电话线路</span>
+      </header>
+      <section class="health" aria-label="运行环境">
+        <div>
+          <span id="llmDot" class="dot gray"></span><b>本地大模型</b
+          ><small id="modelStatus">正在检测…</small>
+        </div>
+        <div>
+          <span id="asrDot" class="dot gray"></span><b>中文语音识别</b
+          ><small id="asrStatus">SenseVoice · CPU</small>
+        </div>
+        <div>
+          <span id="ttsDot" class="dot gray"></span><b>中文语音合成</b
+          ><small id="ttsStatus">Matcha · CPU</small>
+        </div>
+        <button id="refresh" class="quiet">刷新状态 ↻</button>
+      </section>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <div class="workspace">
+        <section class="panel setup">
+          <div class="section-title">
+            <span class="number">01</span>
+            <h2>通话目标</h2>
+          </div>
+          <label for="goal">这次想确认什么？</label
+          ><textarea id="goal" rows="3" maxlength="500">
+确认某园区是否可以提供公司注册地址，并获取相关办理条件</textarea
+          >
+          <label for="fields">需要收集的字段 <small>每行一个</small></label
+          ><textarea id="fields" rows="9">
+是否可以提供注册地址
+注册地址费用
+是否要求实际办公
+是否强制绑定代理记账
+代理记账价格
+银行开户支持
+ICP备案支持
+所需材料
+注册周期</textarea
+          >
+          <label for="mode">处理方式</label
+          ><select id="mode">
+            <option value="local">本地大模型 · 自然语言理解</option>
+            <option value="mock">规则模拟 · 不调用大模型</option>
+          </select>
+          <label class="checkbox"
+            ><input type="checkbox" id="speech" checked />
+            合成并播放助手回复</label
+          >
+          <button id="start" class="primary">
+            开始本地会话 <span>↗</span>
+          </button>
+          <p class="hint">
+            录音与模型处理均在本机。此处不拨打真实电话；规则模拟不具备通用语义理解。
+          </p>
+        </section>
+        <section class="panel conversation">
+          <div class="section-title">
+            <span class="number">02</span>
+            <h2>对话现场</h2>
+            <span id="sessionStatus" class="badge">等待开始</span>
+          </div>
+          <div class="session-meta">
+            <span id="sessionId">尚未创建会话</span
+            ><span id="turnCount">0 轮</span>
+          </div>
+          <div id="messages" class="messages" aria-live="polite">
+            <div class="empty">
+              <div class="wave-mark">▂ ▅ ▃ █ ▅ ▂ ▄</div>
+              <h3>准备好，开始一次对话</h3>
+              <p>
+                设定目标后开始。说话、确认转写，<br />观察助手如何提问和收集证据。
+              </p>
+            </div>
+          </div>
+          <div class="composer">
+            <div class="input-head">
+              <b>对方回答</b
+              ><span id="recordStatus">录音转写后可修改，再发送</span>
+            </div>
+            <textarea
+              id="input"
+              rows="3"
+              maxlength="1500"
+              placeholder="输入回答，或点击录音。Ctrl + Enter 发送。"
+              disabled
+            ></textarea>
+            <div class="actions">
+              <button id="record" disabled>● &nbsp;录音</button
+              ><button id="interrupt" class="quiet" disabled>停止播放</button
+              ><button id="send" class="primary" disabled>发送 ↑</button>
+            </div>
+            <div class="foot-actions">
+              <button id="stop" class="danger quiet" disabled>结束会话</button
+              ><a id="export" hidden>导出过程 JSON ↓</a>
+            </div>
+          </div>
+        </section>
+        <section class="panel evidence">
+          <div class="section-title">
+            <span class="number">03</span>
+            <h2>目标与证据</h2>
+            <span id="progressCount">0 / 9</span>
+          </div>
+          <div class="progress"><div id="progressBar"></div></div>
+          <p class="hint">已确认表示对方表述明确，未经独立事实核验。</p>
+          <div id="fieldCards"></div>
+        </section>
+      </div>
+      <section class="panel timeline">
+        <div class="section-title">
+          <h2>通话全过程</h2>
+          <span class="hint"
+            >实际阶段事件 · 服务端耗时不含录音等待与扬声器延迟</span
+          >
+        </div>
+        <div class="pipeline">
+          <span data-stage="input">01 录音 / 输入</span><i>→</i
+          ><span data-stage="asr">02 语音转写</span><i>→</i
+          ><span data-stage="llm">03 模型与校验</span><i>→</i
+          ><span data-stage="fields">04 字段证据</span><i>→</i
+          ><span data-stage="tts">05 语音合成</span><i>→</i
+          ><span data-stage="playback">06 回复播放</span>
+        </div>
+        <div id="events" class="events">
+          <p class="hint">开始后，这里会记录每个阶段的状态、耗时与结果。</p>
+        </div>
+      </section>
+      <footer>
+        声程 / SIM7600 Voice Agent
+        <span>本地分轮语音 · 录音最长 30 秒 · 尚未实现全双工与回声消除</span>
+      </footer>
+    </main>
+  </body>
+</html>

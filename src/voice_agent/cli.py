@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .core import Agent
+from .local_provider import DEFAULT_MODEL, OllamaProvider
 from .models import State, Task
 from .providers import AnthropicProvider, KimiProvider, MockProvider
 
@@ -33,8 +34,15 @@ async def chat(path: Path, scripted: bool = False) -> int:
             timeout,
             os.getenv("KIMI_BASE_URL", "https://api.moonshot.cn/v1"),
         )
+    elif provider_name == "ollama":
+        provider = OllamaProvider(
+            os.getenv("LLM_MODEL") or DEFAULT_MODEL,
+            timeout,
+            os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+            int(os.getenv("LLM_CONTEXT", "8192")),
+        )
     else:
-        raise ValueError("LLM_PROVIDER must be mock, anthropic or kimi")
+        raise ValueError("LLM_PROVIDER must be mock, anthropic, kimi or ollama")
     if scripted and provider_name != "mock":
         raise ValueError("demo is offline-only; set LLM_PROVIDER=mock")
     if scripted and not dialogue:
