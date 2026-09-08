@@ -275,6 +275,11 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
         launch(session, None)
         return session.snapshot()
 
+    @app.get("/api/current-session")
+    async def current_session():
+        # The single-user console must recover even when tab storage was lost.
+        return next((s.snapshot() for s in sessions.values() if not s.stopped or s.busy), None)
+
     @app.get("/api/sessions/{sid}")
     async def snapshot(sid: str):
         return get_session(sid).snapshot()

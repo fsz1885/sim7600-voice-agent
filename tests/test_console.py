@@ -253,3 +253,39 @@ def test_stop_during_automatic_asr_discards_late_input(tmp_path):
             assert not any(e["stage"] == "input" for e in result["events"])
 
     asyncio.run(run())
+
+
+def test_new_browser_can_find_and_end_abandoned_session(tmp_path):
+    async def run():
+        app = create_app(tmp_path, provider_factory=MockProvider, speech_engine=Speech())
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver", headers=HEADERS
+        ) as first:
+            assert (await first.get("/api/current-session")).json() is None
+            sid = (
+                await first.post(
+                    "/api/sessions",
+                    json={"goal": "确认费用", "required_fields": ["费用"], "speech": False},
+                )
+            ).json()["id"]
+            await settled(first, sid)
+        # New client has no cookies, tab storage or knowledge of the session ID.
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver", headers=HEADERS
+        ) as reopened:
+            recovered = (await reopened.get("/api/current-session")).json()
+            assert recovered["id"] == sid
+            assert recovered["state"]["history"]
+            await reopened.post(f"/api/sessions/{sid}/stop", json={})
+            assert (await reopened.get("/api/current-session")).json() is None
+            assert (
+                await reopened.post(
+                    "/api/sessions",
+                    json={"goal": "新目标", "required_fields": ["材料"], "speech": False},
+                )
+            ).status_code == 200
+            new_sid = (await reopened.get("/api/current-session")).json()["id"]
+            await settled(reopened, new_sid)
+
+    asyncio.run(run())

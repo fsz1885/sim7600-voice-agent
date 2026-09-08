@@ -87,12 +87,24 @@ function harness() {
   });
   context.window.vad = context.vad;
   vm.runInContext(
-    fs.readFileSync("src/voice_agent/static/app.js", "utf8"),
+    fs.readFileSync("src/voice_agent/static/app.js", "utf8")
+      .replace("restore().then(() => setInterval(poll, 600));", ""),
     context,
   );
   const run = (code) => vm.runInContext(code, context);
   return { run, calls, tracks, options: () => options, data };
 }
+
+test("empty tab storage recovers the server session without opening the microphone", async () => {
+  const h = harness();
+  h.data.state.task = { goal: "确认费用", required_fields: ["费用"] };
+  await h.run("restore()");
+  assert.equal(h.run("sid"), "session");
+  assert.equal(h.run('$("start").disabled'), true);
+  assert.equal(h.run('$("stop").disabled'), false);
+  assert.equal(h.run('$("record").disabled'), false);
+  assert.equal(h.options(), undefined);
+});
 
 test("speech end automatically submits PCM WAV, without a record/send click", async () => {
   const h = harness();

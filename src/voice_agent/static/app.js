@@ -626,18 +626,21 @@ renderFields(
   ),
 );
 async function restore() {
-  const saved = sessionStorage.getItem("voice-session");
-  if (saved)
-    try {
-      snapshot = await api(`/api/sessions/${saved}`);
-      sid = saved;
+  pending = true;
+  controls();
+  try {
+    // sessionStorage disappears on tab/browser close. The server is authoritative.
+    const current = await api("/api/current-session");
+    const saved = sessionStorage.getItem("voice-session");
+    snapshot = current || (saved ? await api(`/api/sessions/${saved}`) : null);
+    if (snapshot) {
+      sid = snapshot.id;
+      sessionStorage.setItem("voice-session", sid);
       $("goal").value = snapshot.state.task.goal;
       $("fields").value = snapshot.state.task.required_fields.join("\n");
       $("mode").value = snapshot.mode;
       $("sessionId").textContent =
-        (snapshot.mode === "local" ? "本地大模型" : "规则模拟") +
-        " / " +
-        sid.slice(0, 8);
+        (snapshot.mode === "local" ? "本地大模型" : "规则模拟") + " / " + sid.slice(0, 8);
       $("export").href = `/api/sessions/${sid}/export`;
       $("export").hidden = false;
       for (const event of snapshot.events) {
@@ -646,14 +649,15 @@ async function restore() {
       }
       renderMessages(snapshot.state);
       renderFields(snapshot.state.fields);
-      controls();
-    } catch {
-      sessionStorage.removeItem("voice-session");
-      notice(
-        "上次会话已不在内存中。历史 JSON 保存在本机 local-data 目录，可开始新会话。",
-      );
+      if (!snapshot.stopped) notice("已找回未结束的会话。点击“恢复语音连接”继续，或点击“结束会话”后新建。");
     }
-  await refreshHealth();
-  setInterval(poll, 600);
+  } catch (e) {
+    sessionStorage.removeItem("voice-session");
+    notice(e.status === 404 ? "上次会话已结束或服务已重启，历史文件仍保存在本机。" : e.message);
+  } finally {
+    await refreshHealth();
+    pending = false;
+    controls();
+  }
 }
-restore();
+restore().then(() => setInterval(poll, 600));
