@@ -289,3 +289,39 @@ def test_new_browser_can_find_and_end_abandoned_session(tmp_path):
             await settled(reopened, new_sid)
 
     asyncio.run(run())
+
+
+def test_transcript_visible_before_llm_and_preview_never_commits(tmp_path):
+    async def run():
+        release = asyncio.Event()
+
+        class Slow(MockProvider):
+            async def propose(self, task, state, error=None):
+                if state.history:
+                    await release.wait()
+                return await super().propose(task, state, error)
+
+        app = create_app(tmp_path, provider_factory=Slow, speech_engine=Speech())
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://testserver", headers=HEADERS
+        ) as client:
+            sid = (
+                await client.post(
+                    "/api/sessions",
+                    json={"goal": "费用", "required_fields": ["费用"], "speech": False},
+                )
+            ).json()["id"]
+            await settled(client, sid)
+            assert (await client.post(f"/api/sessions/{sid}/preview", content=wav_bytes())).json()[
+                "text"
+            ]
+            assert (await client.get(f"/api/sessions/{sid}")).json()["state"]["turns"] == 0
+            await client.post(f"/api/sessions/{sid}/audio-turn", content=wav_bytes())
+            snapshot = (await client.get(f"/api/sessions/{sid}")).json()
+            assert snapshot["busy"] and snapshot["pending_input"] == "每年2400元"
+            assert snapshot["state"]["fields"]["费用"]["status"] == "unknown"
+            release.set()
+            final = await settled(client, sid)
+            assert final["pending_input"] is None and final["state"]["turns"] == 1
+
+    asyncio.run(run())

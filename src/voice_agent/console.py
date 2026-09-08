@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -56,6 +56,8 @@ class Session:
     busy: bool = False
     job: asyncio.Task | None = None
     generation: int = 0
+    pending_input: str | None = None
+    draft: str | None = None
 
     def emit(self, stage, status="done", **data):
         self.events.append(
@@ -77,6 +79,8 @@ class Session:
             "stopped": self.stopped,
             "busy": self.busy,
             "generation": self.generation,
+            "pending_input": self.pending_input,
+            "draft": self.draft,
             "state": self.state.model_dump(),
             "result": self.state.result(),
             "events": self.events,
@@ -96,6 +100,7 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
     local = OllamaProvider(model, timeout, base_url, context)
     sessions: dict[str, Session] = {}
     gate = asyncio.Lock()
+    preview_gate = asyncio.Lock()
     app = FastAPI(title="本地语音通话控制台", docs_url=None, redoc_url=None)
     app.state.sessions = sessions
 
@@ -159,6 +164,8 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
                 if session.stopped:
                     return
                 session.state = working
+                session.pending_input = None
+                session.draft = None
                 session.emit(
                     "llm",
                     label="模型返回并完成 Core 校验",
@@ -206,11 +213,14 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
         except Exception:
             session.emit("error", "error", label="本轮处理失败，请检查本地服务后重试")
         finally:
+            session.draft = None
+            session.pending_input = None
             session.busy = False
             save(session)
 
     def launch(session, text):
         session.generation += 1
+        session.pending_input = text
         session.busy = True
         session.job = asyncio.create_task(run_turn(session, text))
 
@@ -268,6 +278,13 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
             body.speech,
         )
         sessions[session.id] = session
+        if isinstance(provider, OllamaProvider):
+
+            def preview(text):
+                if not session.stopped:
+                    session.draft = text
+
+            provider.on_preview = preview
         session.emit(
             "session", label="本地语音会话开始" if body.mode == "local" else "规则模拟开始"
         )
@@ -283,6 +300,44 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
     @app.get("/api/sessions/{sid}")
     async def snapshot(sid: str):
         return get_session(sid).snapshot()
+
+    @app.get("/api/sessions/{sid}/stream")
+    async def stream(sid: str, request: Request):
+        session = get_session(sid)
+
+        async def updates():
+            previous = None
+            while not await request.is_disconnected():
+                current = json.dumps(session.snapshot(), ensure_ascii=False)
+                if current != previous:
+                    yield "data: " + current + "\n\n"
+                    previous = current
+                if session.stopped and not session.busy:
+                    break
+                await asyncio.sleep(0.1)
+
+        return StreamingResponse(
+            updates(), media_type="text/event-stream", headers={"X-Accel-Buffering": "no"}
+        )
+
+    @app.post("/api/sessions/{sid}/preview")
+    async def preview_audio(sid: str, request: Request):
+        session = get_session(sid)
+        if session.stopped:
+            raise HTTPException(409, "会话已结束")
+        if preview_gate.locked():
+            raise HTTPException(429, "正在识别预览")
+        async with preview_gate:
+            data = bytearray()
+            async for chunk in request.stream():
+                data.extend(chunk)
+                if len(data) > MAX_AUDIO_BYTES:
+                    raise HTTPException(413, "录音过大")
+            try:
+                text = await asyncio.to_thread(speech.transcribe, bytes(data))
+            except (ValueError, RuntimeError, OSError):
+                return {"text": ""}
+            return {"text": text if not session.stopped else ""}
 
     @app.post("/api/sessions/{sid}/turn")
     async def turn(sid: str, body: TurnRequest):

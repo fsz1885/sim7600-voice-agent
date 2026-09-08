@@ -158,14 +158,49 @@ function renderFields(fields) {
   $("progressBar").style.width = (total ? (confirmed / total) * 100 : 0) + "%";
 }
 function renderMessages(state) {
-  const key = JSON.stringify(state.history);
+  const messages = [...state.history];
+  if (snapshot?.pending_input)
+    messages.push({
+      role: "user",
+      content: snapshot.pending_input,
+      label: "对方 · 已转写",
+    });
+  if (inflightTranscript && !snapshot?.pending_input)
+    messages.push({
+      role: "user",
+      content: inflightTranscript,
+      label: "对方 · 转写定稿中",
+    });
+  for (const item of queue)
+    messages.push({
+      role: "user",
+      content: item.preview || "（语音已收取，等待转写）",
+      label: "对方 · 等待处理",
+    });
+  if (liveTranscript)
+    messages.push({
+      role: "user",
+      content: liveTranscript,
+      label: "对方 · 识别中",
+    });
+  if (snapshot?.draft && !snapshot.stopped)
+    messages.push({
+      role: "assistant",
+      content: snapshot.draft,
+      label: "助手 · 正在生成（待校验）",
+    });
+  const key = JSON.stringify(messages);
   if (key === historyKey) return;
   historyKey = key;
   $("messages").replaceChildren();
-  state.history.forEach((m, i) => {
+  messages.forEach((m, i) => {
     const row = node("div", undefined, "message " + m.role);
     row.append(
-      node("div", m.role === "user" ? "对方 · 已提交" : "助手", "who"),
+      node(
+        "div",
+        m.label || (m.role === "user" ? "对方 · 已提交" : "助手"),
+        "who",
+      ),
       node("div", m.content, "bubble"),
     );
     $("messages").append(row);
@@ -294,32 +329,46 @@ async function play(url) {
   }
   controls();
 }
+let eventStream = null;
+function connectEvents() {
+  eventStream?.close();
+  if (!window.EventSource || !sid) return;
+  const currentSid = sid;
+  eventStream = new EventSource(`/api/sessions/${sid}/stream`);
+  eventStream.onmessage = (e) => {
+    if (sid !== currentSid) return;
+    applySnapshot(JSON.parse(e.data));
+    if (snapshot.stopped && !snapshot.busy) eventStream.close();
+  };
+}
+function applySnapshot(data) {
+  snapshot = data;
+  renderMessages(snapshot.state);
+  renderFields(snapshot.state.fields);
+  $("turnCount").textContent = snapshot.state.turns + " 轮";
+  for (const e of snapshot.events)
+    if (e.id > lastEvent) {
+      renderEvent(e);
+      lastEvent = e.id;
+      if (
+        e.stage === "tts" &&
+        e.audio &&
+        !snapshot.stopped &&
+        !suppressed.has(e.generation) &&
+        !speaking &&
+        !queue.length
+      )
+        play(e.audio);
+    }
+  if (snapshot.stopped || snapshot.state.status === "handoff") stopListening();
+  else drain();
+  controls();
+}
 async function poll() {
   if (!sid || polling) return;
   polling = true;
   try {
-    snapshot = await api(`/api/sessions/${sid}`);
-    renderMessages(snapshot.state);
-    renderFields(snapshot.state.fields);
-    $("turnCount").textContent = snapshot.state.turns + " 轮";
-    for (const e of snapshot.events)
-      if (e.id > lastEvent) {
-        renderEvent(e);
-        lastEvent = e.id;
-        if (
-          e.stage === "tts" &&
-          e.audio &&
-          !snapshot.stopped &&
-          !suppressed.has(e.generation) &&
-          !speaking &&
-          !queue.length
-        )
-          play(e.audio);
-      }
-    if (snapshot.stopped || snapshot.state.status === "handoff")
-      await stopListening();
-    else drain();
-    controls();
+    applySnapshot(await api(`/api/sessions/${sid}`));
   } catch (e) {
     notice(e.message);
   } finally {
@@ -362,6 +411,7 @@ $("start").onclick = async () => {
     $("export").href = `/api/sessions/${sid}/export`;
     $("export").hidden = false;
     await poll();
+    connectEvents();
   } catch (e) {
     await stopListening();
     notice(e.message);
@@ -437,6 +487,12 @@ function wavBlob(chunks, rate) {
     }
   return new Blob([buffer], { type: "audio/wav" });
 }
+let inflightTranscript = "",
+  liveTranscript = "",
+  previewFrames = [],
+  previewCount = 0,
+  previewBusy = false,
+  utteranceEpoch = 0;
 let speaking = false,
   queue = [],
   sendingAudio = false,
@@ -498,6 +554,10 @@ async function connectMicrophone() {
       submitUserSpeechOnPause: true,
       onSpeechStart: () => {
         speechStarted = Date.now();
+        utteranceEpoch++;
+        previewFrames = [];
+        previewCount = 0;
+        liveTranscript = "";
       },
       onSpeechRealStart: () => {
         if (
@@ -520,6 +580,8 @@ async function connectMicrophone() {
         speechStarted = 0;
       },
       onSpeechEnd: (audio) => {
+        utteranceEpoch++;
+        previewFrames = [];
         speaking = false;
         speechStarted = 0;
         if (
@@ -533,11 +595,21 @@ async function connectMicrophone() {
           notice("待处理发言过多，请等待助手处理后重说本段。");
           return;
         }
-        queue.push(wavBlob([audio], 16000));
+        queue.push({ audio: wavBlob([audio], 16000), preview: liveTranscript });
+        liveTranscript = "";
+        renderMessages(snapshot.state);
         $("recordStatus").textContent = "语音已收取 · 自动识别中";
         drain();
       },
-      onFrameProcessed: () => {
+      onFrameProcessed: (_, frame) => {
+        if (speechStarted && frame && recording) {
+          previewFrames.push(new Float32Array(frame));
+          previewCount += frame.length;
+          if (speaking && previewCount >= 19200 && !previewBusy) {
+            previewCount = 0;
+            previewTranscript();
+          }
+        }
         if (speechStarted && Date.now() - speechStarted > 25000 && !splitting) {
           splitting = true;
           const mic = recording;
@@ -566,6 +638,10 @@ async function connectMicrophone() {
 }
 async function stopListening() {
   micEpoch++;
+  utteranceEpoch++;
+  liveTranscript = "";
+  inflightTranscript = "";
+  previewFrames = [];
   const mic = recording;
   recording = null;
   micStream?.getTracks().forEach((t) => t.stop());
@@ -582,6 +658,33 @@ async function stopListening() {
   $("record").textContent = "恢复语音连接";
   $("recordStatus").textContent = "麦克风未连接";
 }
+async function previewTranscript() {
+  const epoch = utteranceEpoch,
+    currentSid = sid;
+  if (!currentSid || !previewFrames.length) return;
+  previewBusy = true;
+  try {
+    const result = await api(
+      `/api/sessions/${currentSid}/preview`,
+      wavBlob(previewFrames, 16000),
+      true,
+    );
+    if (
+      epoch === utteranceEpoch &&
+      sid === currentSid &&
+      recording &&
+      speaking &&
+      !snapshot.stopped
+    ) {
+      liveTranscript = result.text;
+      renderMessages(snapshot.state);
+    }
+  } catch {
+    /* Final ASR remains authoritative if an optional preview fails. */
+  } finally {
+    previewBusy = false;
+  }
+}
 async function drain() {
   if (
     sendingAudio ||
@@ -592,9 +695,14 @@ async function drain() {
   )
     return;
   sendingAudio = true;
-  const audio = queue.shift();
+  const item = queue.shift();
+  inflightTranscript = item.preview || "（语音识别中）";
   try {
-    const result = await api(`/api/sessions/${sid}/audio-turn`, audio, true);
+    const result = await api(
+      `/api/sessions/${sid}/audio-turn`,
+      item.audio,
+      true,
+    );
     if (snapshot.stopped) return;
     snapshot.busy = true;
     snapshot.generation = result.generation;
@@ -602,13 +710,14 @@ async function drain() {
     $("recordStatus").textContent = "持续聆听 · 可随时补充或更正";
   } catch (e) {
     if (e.status === 409 && !snapshot.stopped) {
-      queue.unshift(audio);
+      queue.unshift(item);
       snapshot.busy = true;
     } else {
       notice(`这段语音未提交：${e.message}。请重新说一遍。`);
     }
   } finally {
     sendingAudio = false;
+    inflightTranscript = "";
   }
 }
 $("record").onclick = () =>
@@ -640,7 +749,9 @@ async function restore() {
       $("fields").value = snapshot.state.task.required_fields.join("\n");
       $("mode").value = snapshot.mode;
       $("sessionId").textContent =
-        (snapshot.mode === "local" ? "本地大模型" : "规则模拟") + " / " + sid.slice(0, 8);
+        (snapshot.mode === "local" ? "本地大模型" : "规则模拟") +
+        " / " +
+        sid.slice(0, 8);
       $("export").href = `/api/sessions/${sid}/export`;
       $("export").hidden = false;
       for (const event of snapshot.events) {
@@ -649,15 +760,27 @@ async function restore() {
       }
       renderMessages(snapshot.state);
       renderFields(snapshot.state.fields);
-      if (!snapshot.stopped) notice("已找回未结束的会话。点击“恢复语音连接”继续，或点击“结束会话”后新建。");
+      connectEvents();
+      if (!snapshot.stopped)
+        notice(
+          "已找回未结束的会话。点击“恢复语音连接”继续，或点击“结束会话”后新建。",
+        );
     }
   } catch (e) {
     sessionStorage.removeItem("voice-session");
-    notice(e.status === 404 ? "上次会话已结束或服务已重启，历史文件仍保存在本机。" : e.message);
+    notice(
+      e.status === 404
+        ? "上次会话已结束或服务已重启，历史文件仍保存在本机。"
+        : e.message,
+    );
   } finally {
     await refreshHealth();
     pending = false;
     controls();
   }
 }
-restore().then(() => setInterval(poll, 600));
+restore().then(() =>
+  setInterval(() => {
+    if (!eventStream || eventStream.readyState !== 1) poll();
+  }, 600),
+);

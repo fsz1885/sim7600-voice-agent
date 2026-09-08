@@ -1,0 +1,102 @@
+{
+  "method": "Real Docker Ollama NDJSON -> SSE, synthetic TTS input -> ASR preview/automatic turn; no browser device test",
+  "observations": [
+    {
+      "seconds": 0.015,
+      "generation": 1,
+      "busy": true,
+      "draft": "",
+      "pending_input": null,
+      "turns": 0
+    },
+    {
+      "seconds": 0.718,
+      "generation": 1,
+      "busy": true,
+      "draft": "请问办理业务需要",
+      "pending_input": null,
+      "turns": 0
+    },
+    {
+      "seconds": 0.812,
+      "generation": 1,
+      "busy": true,
+      "draft": "请问办理业务需要支付多少费用？",
+      "pending_input": null,
+      "turns": 0
+    },
+    {
+      "seconds": 1.703,
+      "generation": 1,
+      "busy": false,
+      "draft": null,
+      "pending_input": null,
+      "turns": 0
+    },
+    {
+      "seconds": 0.0,
+      "generation": 2,
+      "busy": true,
+      "draft": "",
+      "pending_input": "费用是每年2400元。",
+      "turns": 0
+    },
+    {
+      "seconds": 0.5,
+      "generation": 2,
+      "busy": true,
+      "draft": "费用",
+      "pending_input": "费用是每年2400元。",
+      "turns": 0
+    },
+    {
+      "seconds": 0.594,
+      "generation": 2,
+      "busy": true,
+      "draft": "费用已明确为每年240",
+      "pending_input": "费用是每年2400元。",
+      "turns": 0
+    },
+    {
+      "seconds": 0.703,
+      "generation": 2,
+      "busy": true,
+      "draft": "费用已明确为每年2400元，请问付款方式是什么",
+      "pending_input": "费用是每年2400元。",
+      "turns": 0
+    },
+    {
+      "seconds": 0.797,
+      "generation": 2,
+      "busy": true,
+      "draft": "费用已明确为每年2400元，请问付款方式是什么？",
+      "pending_input": "费用是每年2400元。",
+      "turns": 0
+    },
+    {
+      "seconds": 2.406,
+      "generation": 2,
+      "busy": false,
+      "draft": null,
+      "pending_input": null,
+      "turns": 1
+    }
+  ],
+  "result": {
+    "费用": {
+      "status": "confirmed",
+      "value": "每年2400元",
+      "evidence": [
+        {
+          "turn": 1,
+          "quote": "费用是每年2400元。"
+        }
+      ]
+    },
+    "付款方式": {
+      "status": "unknown",
+      "value": null,
+      "evidence": []
+    }
+  }
+}

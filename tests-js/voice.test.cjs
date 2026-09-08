@@ -87,8 +87,9 @@ function harness() {
   });
   context.window.vad = context.vad;
   vm.runInContext(
-    fs.readFileSync("src/voice_agent/static/app.js", "utf8")
-      .replace("restore().then(() => setInterval(poll, 600));", ""),
+    fs
+      .readFileSync("src/voice_agent/static/app.js", "utf8")
+      .replace(/restore\(\)\.then\([\s\S]*$/, ""),
     context,
   );
   const run = (code) => vm.runInContext(code, context);
@@ -109,7 +110,7 @@ test("empty tab storage recovers the server session without opening the micropho
 test("speech end automatically submits PCM WAV, without a record/send click", async () => {
   const h = harness();
   await h.run(
-    'sid="session"; snapshot={state:{status:"active"},generation:1,busy:false}; startListening()',
+    'sid="session"; snapshot={state:{status:"active",history:[]},generation:1,busy:false}; startListening()',
   );
   h.options().onSpeechRealStart();
   h.options().onSpeechEnd(new Float32Array(16000));
@@ -124,7 +125,7 @@ test("speech end automatically submits PCM WAV, without a record/send click", as
 test("speech waits while model is busy and is retained in order", async () => {
   const h = harness();
   await h.run(
-    'sid="session"; snapshot={state:{status:"active"},generation:1,busy:true}; startListening()',
+    'sid="session"; snapshot={state:{status:"active",history:[]},generation:1,busy:true}; startListening()',
   );
   h.options().onSpeechEnd(new Float32Array(16000));
   h.options().onSpeechEnd(new Float32Array(32000));
@@ -138,7 +139,7 @@ test("speech waits while model is busy and is retained in order", async () => {
 test("hangup releases microphone and late VAD callback cannot submit", async () => {
   const h = harness();
   await h.run(
-    'sid="session"; snapshot={state:{status:"active"},generation:1}; startListening()',
+    'sid="session"; snapshot={state:{status:"active",history:[]},generation:1}; startListening()',
   );
   await h.run("stopListening()");
   h.options().onSpeechEnd(new Float32Array(16000));
@@ -149,7 +150,7 @@ test("hangup releases microphone and late VAD callback cannot submit", async () 
 test("speaking interrupts WebAudio immediately and invalidates pending playback", async () => {
   const h = harness();
   await h.run(
-    'sid="session"; snapshot={state:{status:"active"},generation:1}; startListening()',
+    'sid="session"; snapshot={state:{status:"active",history:[]},generation:1}; startListening()',
   );
   h.run(
     'globalThis.didStop=false; voiceSource={stop(){didStop=true;}}; voiceURL="/audio/a.wav"',
@@ -172,10 +173,38 @@ test("handoff can still be hung up before starting another call", () => {
 test("hangup while microphone permission is pending stops late stream", async () => {
   const h = harness();
   await h.run(
-    'sid="session"; snapshot={state:{status:"active"}}; globalThis.originalGet=navigator.mediaDevices.getUserMedia; navigator.mediaDevices.getUserMedia=()=>new Promise(r=>globalThis.grant=r); globalThis.connecting=startListening(); undefined',
+    'sid="session"; snapshot={state:{status:"active",history:[]}}; globalThis.originalGet=navigator.mediaDevices.getUserMedia; navigator.mediaDevices.getUserMedia=()=>new Promise(r=>globalThis.grant=r); globalThis.connecting=startListening(); undefined',
   );
   await h.run("stopListening()");
   h.run("originalGet().then(grant)");
   await assert.rejects(h.run("connecting"), /取消/);
   assert.equal(h.tracks.stopped, true);
+});
+
+test("pending transcription and streamed draft render before committed history", () => {
+  const h = harness();
+  h.run(
+    'snapshot={state:{history:[]},pending_input:"费用是2400元",draft:"请问"}; renderMessages(snapshot.state)',
+  );
+  const rows = JSON.parse(h.run("historyKey"));
+  assert.equal(rows[0].content, "费用是2400元");
+  assert.equal(rows[1].content, "请问");
+  assert.equal(h.run("snapshot.state.history.length"), 0);
+});
+
+test("speech preview is requested while user is speaking, before speech end", async () => {
+  const h = harness();
+  await h.run(
+    'sid="session"; snapshot={state:{status:"active",history:[]},generation:1}; startListening()',
+  );
+  h.options().onSpeechStart();
+  h.options().onSpeechRealStart();
+  for (let i = 0; i < 38; i++)
+    h.options().onFrameProcessed({}, new Float32Array(512));
+  await new Promise(setImmediate);
+  assert.ok(h.calls.some((c) => c.url.endsWith("/preview")));
+  assert.equal(
+    h.calls.some((c) => c.url.endsWith("/audio-turn")),
+    false,
+  );
 });

@@ -71,3 +71,50 @@ def test_docker_model_service_is_allowed_but_other_hosts_are_not():
     for host in ["ollama.example.com", "192.168.1.3", "host.docker.internal"]:
         with pytest.raises(ValueError):
             OllamaProvider(base_url=f"http://{host}:11434")
+
+
+def test_response_preview_never_exposes_structured_fields():
+    from voice_agent.local_provider import response_preview
+
+    assert response_preview('{"response":"你好') == "你好"
+    assert response_preview('{"response":"你好","updates":[') == "你好"
+    assert response_preview(r'{"response":"你好\u4e') == "你好"
+    assert response_preview('{"updates":[{"response":"不应展示') == ""
+
+
+@pytest.mark.parametrize("complete", [True, False])
+def test_stream_delivers_preview_before_completion(monkeypatch, complete):
+    async def run():
+        seen = []
+
+        class Chunks(httpx.AsyncByteStream):
+            async def __aiter__(self):
+                yield (json.dumps({"message": {"content": '{"response":"你好'}}) + "\n").encode()
+                assert "你好" in seen  # callback ran before the remaining JSON arrived
+                if complete:
+                    yield (
+                        json.dumps(
+                            {"message": {"content": '"}'}, "done": True, "done_reason": "stop"}
+                        )
+                        + "\n"
+                    ).encode()
+
+        def handler(request):
+            assert json.loads(request.content)["stream"] is True
+            return httpx.Response(200, stream=Chunks())
+
+        client = httpx.AsyncClient
+        monkeypatch.setattr(
+            "voice_agent.local_provider.httpx.AsyncClient",
+            lambda **kw: client(transport=httpx.MockTransport(handler), **kw),
+        )
+        provider = OllamaProvider()
+        provider.on_preview = seen.append
+        task = Task(goal="费用", required_fields=["费用"])
+        if complete:
+            assert await provider.propose(task, State.for_task(task)) == '{"response":"你好"}'
+        else:
+            with pytest.raises(ProviderError):
+                await provider.propose(task, State.for_task(task))
+
+    asyncio.run(run())
