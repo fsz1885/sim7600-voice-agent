@@ -17,6 +17,9 @@ jobs:
       - run: python -m pytest -q
       - run: python -m ruff check src tests scripts
       - run: node --check src/voice_agent/static/app.js
+      - run: npm ci --ignore-scripts
+      - run: npm run vendor
+      - run: npm test
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -42,3 +45,4 @@ jobs:
       - run: docker compose run --rm -T app test
       - run: docker compose run --rm -T app lint
       - run: docker compose run --rm -T app demo examples/company-registration.json
+      - run: docker compose -f compose.voice.yml build

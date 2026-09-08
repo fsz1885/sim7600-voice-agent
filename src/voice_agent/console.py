@@ -55,6 +55,7 @@ class Session:
     stopped: bool = False
     busy: bool = False
     job: asyncio.Task | None = None
+    generation: int = 0
 
     def emit(self, stage, status="done", **data):
         self.events.append(
@@ -63,6 +64,7 @@ class Session:
                 "time": time.time(),
                 "stage": stage,
                 "status": status,
+                "generation": self.generation,
                 **data,
             }
         )
@@ -74,6 +76,7 @@ class Session:
             "transport": "local_simulation",
             "stopped": self.stopped,
             "busy": self.busy,
+            "generation": self.generation,
             "state": self.state.model_dump(),
             "result": self.state.result(),
             "events": self.events,
@@ -110,7 +113,8 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; "
+            "worker-src 'self' blob:; "
             "media-src 'self' blob:; connect-src 'self'; img-src 'self' data:; "
             "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
         )
@@ -131,8 +135,11 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
         )
         temporary.replace(path)
 
-    def ready(session):
-        if session.stopped or session.state.status != "active":
+    def ready(session, allow_completed=False):
+        if session.stopped or (
+            session.state.status != "active"
+            and not (allow_completed and session.state.status == "completed")
+        ):
             raise HTTPException(409, "会话已结束")
         if session.busy or gate.locked():
             raise HTTPException(409, "正在处理上一轮，请稍候")
@@ -203,6 +210,7 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
             save(session)
 
     def launch(session, text):
+        session.generation += 1
         session.busy = True
         session.job = asyncio.create_task(run_turn(session, text))
 
@@ -233,7 +241,7 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
 
     @app.post("/api/sessions")
     async def start(body: StartRequest):
-        if any(s.busy or (not s.stopped and s.state.status == "active") for s in sessions.values()):
+        if any(s.busy or not s.stopped for s in sessions.values()):
             raise HTTPException(409, "请先结束当前会话")
         if len(sessions) >= 20:
             del sessions[next(iter(sessions))]
@@ -281,11 +289,14 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
         launch(session, body.text)
         return {"accepted": True}
 
+    @app.post("/api/sessions/{sid}/audio-turn")
     @app.post("/api/sessions/{sid}/transcribe")
     async def transcribe(sid: str, request: Request):
         session = get_session(sid)
-        ready(session)
+        automatic = request.url.path.endswith("/audio-turn")
+        ready(session, allow_completed=automatic)
         session.busy = True
+        launched = False
         try:
             async with gate:
                 data = bytearray()
@@ -304,12 +315,28 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
                 session.audio[name] = path
                 session.emit(
                     "asr",
-                    label="转写待确认",
+                    label="语音自动提交" if automatic else "转写待确认",
+                    turn=session.state.turns + 1 if automatic else None,
                     text=text,
                     audio=f"/api/sessions/{sid}/audio/{name}",
                     duration_ms=round((time.perf_counter() - started) * 1000),
                 )
-                return {"text": text}
+            if automatic:
+                if not text.strip():
+                    raise ValueError("未识别到有效语音")
+                session.emit(
+                    "input",
+                    label="自动提交对方发言",
+                    text=text,
+                    turn=session.state.turns + 1,
+                    audio=f"/api/sessions/{sid}/audio/{name}",
+                )
+                if session.state.status == "completed":
+                    session.state.status = "active"
+                    session.state.final_result = None
+                launch(session, text)
+                launched = True
+            return {"text": text, "accepted": automatic, "generation": session.generation}
         except ValueError as exc:
             session.emit("asr", "error", label=str(exc))
             raise HTTPException(422, str(exc)) from None
@@ -317,8 +344,16 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
             session.emit("asr", "error", label="语音识别不可用")
             raise HTTPException(503, "语音识别不可用，请检查模型安装") from None
         finally:
-            session.busy = False
+            if not launched:
+                session.busy = False
             save(session)
+
+    @app.post("/api/sessions/{sid}/interrupt")
+    async def interrupt(sid: str):
+        session = get_session(sid)
+        session.emit("interruption", label="检测到新发言，停止当前回复播放")
+        save(session)
+        return {"generation": session.generation}
 
     @app.post("/api/sessions/{sid}/stop")
     async def stop(sid: str):
@@ -376,8 +411,9 @@ def main():
 
     parser = argparse.ArgumentParser(description="本机语音控制台")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
-    uvicorn.run(create_app(), host="127.0.0.1", port=args.port)
+    uvicorn.run(create_app(), host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

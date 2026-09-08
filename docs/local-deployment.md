@@ -1,87 +1,111 @@
-# Windows 本地语音控制台
+# 本地连续语音与信息溯源
 
-控制台运行在 `127.0.0.1:8765`，Ollama 运行在 `127.0.0.1:11434`。
-RTX 4060 运行 Qwen3.5 4B Q4_K_M（think=false、仅文本请求）；CPU 运行 SenseVoice INT8 和 Matcha + Vocos。
-无云端回退，不读取另一台机器的 `.env`，不需要 API Key。模型下载需要联网。
+默认部署使用 Docker Compose：`sim7600-console` 提供网页与 CPU 中文 ASR/TTS，
+`sim7600-ollama` 使用 RTX 4060 运行 Qwen3.5 4B。没有云端回退，不需要 API Key。
+这是浏览器模拟电话场景，尚未接入 SIM7600 线路。
 
-## 安装
+## Docker 启动
 
-使用 Python 3.12、Git 和 uv，在仓库根目录执行 README 的虚拟环境及依赖安装命令。
-`requirements-local.lock` 固定本地控制台依赖；基础 `requirements.lock` 保持不变。
-
-从 [Ollama 官方 v0.33.3 发布页](https://github.com/ollama/ollama/releases/tag/v0.33.3)
-下载 `ollama-windows-amd64.zip`，解压到 `runtime/ollama/`。
-本次安装包 SHA-256：`52cb36a62e7e501f61514f60212dec7117b6c098811357585e02fffe32d2fcd7`。
-可用 `Get-FileHash <安装包> -Algorithm SHA256` 校验。
-Windows 原生 NVIDIA 支持见 [官方说明](https://docs.ollama.com/windows)。
-
-在一个 PowerShell 中启动模型服务：
+Windows 需要 Docker Desktop 的 WSL 2 后端及支持 GPU 的 NVIDIA 驱动，见
+[Docker GPU 说明](https://docs.docker.com/desktop/features/gpu/)。Linux 需要 NVIDIA
+Container Toolkit，见 [Ollama Docker 说明](https://docs.ollama.com/docker)。
+已有本机 `models/` 权重时，在仓库根目录执行：
 
 ```powershell
-$env:OLLAMA_MODELS = Join-Path (Get-Location) 'models\ollama'
-$env:OLLAMA_HOST = '127.0.0.1:11434'
-$env:OLLAMA_NUM_PARALLEL = '1'
-$env:OLLAMA_MAX_LOADED_MODELS = '1'
-$env:OLLAMA_NO_CLOUD = '1'
-.\runtime\ollama\ollama.exe serve
+docker compose -f compose.voice.yml up -d --build
+docker compose -f compose.voice.yml ps
+docker compose -f compose.voice.yml logs --tail 50
 ```
 
-在第二个 PowerShell 中安装模型与启动控制台：
+打开 `http://127.0.0.1:8765`。Docker Desktop 的 `sim7600-voice-agent` 项目下有
+`sim7600-console` 和 `sim7600-ollama` 两个常驻容器，重启 Docker 后会自动重启。
+默认的 `docker compose` 仍是原有 CLI 工具；启动网页必须指定 `-f compose.voice.yml`。
+Ollama 仅在容器网络内提供 API，网页端口只发布到宿主机回环地址。
+不要同时运行原生控制台占用 8765，也不要同时在原生 Ollama 中加载模型占用显存。
+
+首次安装（没有模型文件）：
 
 ```powershell
-.\runtime\ollama\ollama.exe pull qwen3.5:4b
-.\.venv\Scripts\python.exe scripts/setup_speech.py
-.\scripts\start-local.ps1
+docker compose -f compose.voice.yml up -d ollama
+docker compose -f compose.voice.yml exec ollama ollama pull qwen3.5:4b
+# 用 Python 3.12 建立环境安装语音权重；已有权重时无需再次执行
+uv venv .venv --python 3.12
+uv pip install --python .venv/Scripts/python.exe -r requirements-local.lock
+uv pip install --python .venv/Scripts/python.exe --no-deps --no-build-isolation -e .
+.venv/Scripts/python.exe scripts/setup_speech.py
+New-Item -ItemType Directory -Force local-data
+docker compose -f compose.voice.yml up -d --build
 ```
 
-语音安装脚本只下载三个选定发布物，并核对已有 `comparison-manifest.json` 中的
-SHA-256 与大小，使用安全 tar 解压。权重不入 Git。不要重新运行全部历史评估模型安装器。
-Ollama 模型约 3.4 GB；安装包约 1.47 GB；完整解压、下载缓存与语音模型还需要额外空间。
-
-本机已装好的环境不必重复安装，之后只需运行 `scripts/start-local.ps1`。
-脚本复用已有 Ollama 服务；若尚未运行则尝试隐藏启动。若环境不允许后台启动，
-使用上面的两个终端方式。退出控制台使用 Ctrl+C；已有 Ollama 服务单独退出。
-未注册开机自启或 Windows 系统服务。
-
-## 使用
-
-1. 打开 `http://127.0.0.1:8765`，刷新并检查模型、ASR、TTS 安装状态。
-2. 填写目标与每行一个的字段，选择本地模型，开始会话。规则模拟仅用于离线操作验证。
-3. 输入对方回答，或点击录音，讲完后停止。录音最长 30 秒，分轮操作，不自动连续监听。
-4. 核对转写，尤其是金额、否定与前提条件，可修改后再发送。
-5. 查看模型/Core 校验、字段更新、原话证据、回复和 TTS 音频。结束语生成后任务完成；
-   浏览器播放开始/结束单独记录，不能把 TTS 完成当作实际播放完成。
-6. 可停止播放、结束会话、导出过程 JSON；刷新同一浏览器标签可恢复当前会话。
-
-音频与 `session.json` 自动保存到 `local-data/<会话ID>/`；服务重启后不自动加载历史快照，
-但文件保留。内存最多保留最近 20 个会话，磁盘文件由使用者按需清理。
-界面端文本通过 `textContent` 显示，禁止跨站 API 写入；服务固定监听回环地址。
-这是本机单使用者工具，不提供多用户认证，不应直接暴露到局域网或公网。
-
-## 实现边界
-
-- 目前所有会话都是本地模拟线路。未检测到 SIM7600 串口，未实现拨号、接听、挂断 AT 指令、
-  电话音频路由或人工坐席转接；`handoff` 是任务未完成的处理建议。
-- CPU ASR 在整段录音结束后识别。只添加能量静音门限，不是完整 VAD；噪声仍可能产生错误转写。
-  浏览器请求回声消除不等于已实现电话 AEC。录音时停止助手播放，尚无说话自动打断。
-- Matcha 是中文单音色完整句合成，不是流式首包；中英文混读、数字和发音仍需人工听辨。
-- Core 未改变：JSON/schema、字段白名单、最新原话子串证据及完成条件仍由 Core 验证。
-  子串证据不证明语义正确，模型确认不等于现实事实核验。
-- 默认 8192 上下文，输出上限 1200 token，单请求 90 秒、Core 最多一次修复。
-  保守字符预算超限会失败进入 retry/handoff，避免静默丢弃旧证据；不是精确 tokenizer 计数。
-- 阶段耗时来自服务端，包含首次模型加载；没有测量真实麦克风到扬声器的端到端延迟。
-  浏览器自动播放可能被阻止，可手动点击事件中的音频。健康状态的“已安装”不代表质量通过。
-
-## 验证与复测
+Linux 使用 `.venv/bin/python`，并确保挂载的 `local-data/` 可由容器 UID 10001 写入。
+模型安装脚本校验 SHA-256，不下载历史评估中的其他候选模型。
+LLM 权重约 3.4 GB，容器镜像、CPU 语音模型及构建缓存另占空间。
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m pytest -q docs/speech-evaluation/test_phone_channel.py
-.\.venv\Scripts\python.exe -m ruff check src tests scripts
+# 检查 GPU 推理（开始对话后运行）
+docker compose -f compose.voice.yml exec ollama ollama ps
+# 停止；权重、音频与快照保留
+docker compose -f compose.voice.yml down
+```
+
+## 连续通话
+
+1. 使用 Chrome 或 Edge 打开本机地址，设定目标与所需字段，点击“开始语音通话”。
+2. 允许一次麦克风访问。之后直接说话，约 900 毫秒停顿后自动识别、提交、回复，
+   不需要逐轮录音或确认转写。超过约 25 秒的连续发言自动切段。
+3. 助手播放时可以说话打断；旧回复停止播放，新发言按顺序处理。
+   模型繁忙时最多暂存 8 段发言，超限或识别失败会明确提示重说，不伪造转写。
+4. 字段卡片显示当前值、状态、原话证据和对应轮次音频，可回听核对来源。
+   过程记录同时保存识别原文、字段更新、校验理由及实际浏览器播放事件。
+5. 字段全部确认后仍可口头更正；控制台重新将完成状态交给 Core 校验。
+   点击“结束会话”才释放麦克风、清空待处理音频并阻止晚到结果提交。
+6. 刷新网页保留当前会话；因浏览器权限限制，需要点击一次“恢复语音连接”。
+   不会自动回放之前的回复。文字调试是折叠的辅助入口。
+
+建议佩戴耳机。浏览器开启 echoCancellation/noiseSuppression，但没有验证所有设备的
+外放回声抑制，不能保证与 ChatGPT 语音同等的噪声环境表现。
+Silero VAD v5、ONNX Runtime WASM 与 worklet 均由本机提供，运行时没有 CDN 请求。
+浏览器脚本依赖由 `package-lock.json` 固定，Docker 构建自动复制必要资源。
+
+## 溯源与限制
+
+音频和 `session.json` 保存在 `local-data/<会话ID>/`，不提交到 Git。
+可导出包含证据、事件时间和音频路径的 JSON；音频文件需另行保留。
+服务重启后不自动恢复历史会话 API，原始文件仍在磁盘；内存最多保留 20 个会话。
+已确认表示表述明确，不表示现实事实已经核实。Core 的字段白名单、原话子串证据、
+原子更新与完成条件保持不变；ASR 的误识别仍可能成为错误证据，口头更正同样留痕。
+
+ASR 在 VAD 切段后处理完整句，TTS 也是完整句合成，未实现流式模型首字播放。
+GPU LLM 默认 8192 上下文、1200 输出 token，单次请求 90 秒、Core 最多修复一次。
+打断只取消播放，已经启动的模型/CPU 计算继续完成，避免丢失前一段发言的字段证据。
+未实现真实拨号、接听、AT 指令、电话音频路由或人工坐席转接。
+
+## 原生 Windows 备选
+
+先停止 Docker 的同名服务。安装 Python 依赖与语音权重同上，额外执行：
+
+```powershell
+npm ci --ignore-scripts
+npm run vendor
+```
+
+从 [Ollama v0.33.3](https://github.com/ollama/ollama/releases/tag/v0.33.3)
+下载 Windows ZIP 到 `runtime/ollama/`，设置 `OLLAMA_MODELS` 指向仓库 `models/ollama/`，
+启动 `ollama serve` 并安装模型。然后执行 `scripts/start-local.ps1`。
+这是备选方式，原生进程不会出现在 Docker Desktop 容器列表中。
+
+## 验证
+
+```powershell
+.venv/Scripts/python.exe -m pytest -q
+.venv/Scripts/python.exe -m ruff check src tests scripts
+npm ci --ignore-scripts
+npm run vendor
+npm test
 node --check src/voice_agent/static/app.js
-# 显式调用本地模型；保存新文件以保留旧测试记录：
-.\.venv\Scripts\python.exe scripts/evaluate_local.py --output local-data/evaluation-new.json
 ```
 
-离线测试使用模拟 HTTP/语音对象，不声称测试了模型准确率。真实本地实测另见
-[本机评估说明](local-evaluation.md)，使用书写场景和合成语音回环，不是实录电话。
+Python 测试验证 Core、API 与停止边界；Node 测试以模拟麦克风/VAD 回调验证自动提交、
+排队和打断，不代表真实浏览器音频设备测试。真实模型结果见
+[本机评估](local-evaluation.md)，Docker 实测见 [连续语音验证](continuous-voice-validation.md)。
+语音评估使用合成场景，均不是实录电话数据。

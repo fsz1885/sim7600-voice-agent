@@ -1,0 +1,48 @@
+name: sim7600-voice-agent
+services:
+  ollama:
+    image: ollama/ollama:0.33.3
+    container_name: sim7600-ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes:
+      - ./models/ollama:/root/.ollama/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  console:
+    build:
+      context: .
+      dockerfile: Dockerfile.console
+    container_name: sim7600-console
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8765:8765"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      LLM_MODEL: qwen3.5:4b
+      VOICE_MODELS_DIR: /models
+      VOICE_DATA_DIR: /data
+    volumes:
+      - ./models:/models:ro
+      - ./local-data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 6

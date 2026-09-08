@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>声程 · 本地语音控制台</title>
     <link rel="stylesheet" href="/style.css" />
+    <script src="/vendor/ort/ort.wasm.min.js" defer></script>
+    <script src="/vendor/vad/bundle.min.js" defer></script>
     <script src="/app.js" defer></script>
   </head>
   <body>
@@ -21,7 +23,7 @@
       <header>
         <div>
           <div class="eyebrow">LOCAL VOICE WORKSPACE</div>
-          <h1>让每一步对话，都清晰可见。</h1>
+          <h1>通话溯源工作台</h1>
         </div>
         <span class="transport">本地模拟 · 未连接电话线路</span>
       </header>
@@ -73,7 +75,7 @@ ICP备案支持
             合成并播放助手回复</label
           >
           <button id="start" class="primary">
-            开始本地会话 <span>↗</span>
+            开始语音通话 <span>↗</span>
           </button>
           <p class="hint">
             录音与模型处理均在本机。此处不拨打真实电话；规则模拟不具备通用语义理解。
@@ -94,26 +96,29 @@ ICP备案支持
               <div class="wave-mark">▂ ▅ ▃ █ ▅ ▂ ▄</div>
               <h3>准备好，开始一次对话</h3>
               <p>
-                设定目标后开始。说话、确认转写，<br />观察助手如何提问和收集证据。
+                设定目标后开始，允许一次麦克风访问。直接说话，<br />观察助手如何提问和收集证据。
               </p>
             </div>
           </div>
           <div class="composer">
             <div class="input-head">
               <b>对方回答</b
-              ><span id="recordStatus">录音转写后可修改，再发送</span>
+              ><span id="recordStatus">自动识别说话与停顿，无需逐轮操作</span>
             </div>
-            <textarea
-              id="input"
-              rows="3"
-              maxlength="1500"
-              placeholder="输入回答，或点击录音。Ctrl + Enter 发送。"
-              disabled
-            ></textarea>
+            <details>
+              <summary>文字调试（可选）</summary>
+              <textarea
+                id="input"
+                rows="3"
+                maxlength="1500"
+                placeholder="调试用文字输入（可选）。Ctrl + Enter 发送。"
+                disabled
+              ></textarea>
+              <button id="send" class="primary" disabled>发送文字 ↑</button>
+            </details>
             <div class="actions">
-              <button id="record" disabled>● &nbsp;录音</button
-              ><button id="interrupt" class="quiet" disabled>停止播放</button
-              ><button id="send" class="primary" disabled>发送 ↑</button>
+              <button id="record" disabled>恢复语音连接</button
+              ><button id="interrupt" class="quiet" disabled>停止播放</button>
             </div>
             <div class="foot-actions">
               <button id="stop" class="danger quiet" disabled>结束会话</button
@@ -153,7 +158,7 @@ ICP备案支持
       </section>
       <footer>
         声程 / SIM7600 Voice Agent
-        <span>本地分轮语音 · 录音最长 30 秒 · 尚未实现全双工与回声消除</span>
+        <span>连续语音 · 自动停顿检测 · 支持说话打断 · 建议佩戴耳机</span>
       </footer>
     </main>
   </body>

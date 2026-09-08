@@ -5,6 +5,7 @@ $pythonPath = Join-Path $projectRoot '.venv\Scripts\python.exe'
 $ollamaPath = Join-Path $projectRoot 'runtime\ollama\ollama.exe'
 $dataPath = Join-Path $projectRoot 'local-data'
 if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run the local setup instructions first.' }
+if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'src\voice_agent\static\vendor\vad\silero_vad_v5.onnx'))) { throw 'Run npm ci --ignore-scripts and npm run vendor from the repository first.' }
 New-Item -ItemType Directory -Force -Path $dataPath | Out-Null
 $env:VOICE_DATA_DIR = $dataPath
 $env:VOICE_MODELS_DIR = Join-Path $projectRoot 'models'

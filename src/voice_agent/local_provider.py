@@ -34,14 +34,14 @@ class OllamaProvider:
         url = urlsplit(base_url)
         if (
             url.scheme != "http"
-            or url.hostname not in {"127.0.0.1", "localhost", "::1"}
+            or url.hostname not in {"127.0.0.1", "localhost", "::1", "ollama"}
             or url.username
             or url.password
             or url.query
             or url.fragment
             or url.path not in {"", "/"}
         ):
-            raise ValueError("Local model URL must be an HTTP loopback address")
+            raise ValueError("Local model URL must use HTTP loopback or the ollama Docker service")
         if not model or timeout <= 0 or context < 2048:
             raise ValueError("Invalid local model configuration")
         self.model, self.timeout = model, timeout

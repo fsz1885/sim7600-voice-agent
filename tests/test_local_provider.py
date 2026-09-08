@@ -64,3 +64,10 @@ def test_context_overflow_rejected_without_silent_history_loss():
     task = Task(goal="字" * 9000, required_fields=["费用"])
     with pytest.raises(ProviderError, match="context"):
         asyncio.run(OllamaProvider().propose(task, State.for_task(task)))
+
+
+def test_docker_model_service_is_allowed_but_other_hosts_are_not():
+    assert OllamaProvider(base_url="http://ollama:11434").base_url == "http://ollama:11434"
+    for host in ["ollama.example.com", "192.168.1.3", "host.docker.internal"]:
+        with pytest.raises(ValueError):
+            OllamaProvider(base_url=f"http://{host}:11434")

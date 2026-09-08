@@ -17,6 +17,7 @@ const stageNames = {
   reply: "回复",
   tts: "语音合成",
   playback: "播放",
+  interruption: "插话",
   complete: "结果",
   stop: "结束",
   error: "异常",
@@ -57,11 +58,13 @@ async function api(path, body, binary = false) {
     } catch {
       data = {};
     }
-    throw new Error(
+    const error = new Error(
       typeof data.detail === "string"
         ? data.detail
         : `请求失败 (${response.status})`,
     );
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }
@@ -83,17 +86,18 @@ async function refreshHealth() {
   }
 }
 function controls() {
+  const open = snapshot && !snapshot.stopped;
   const active =
-    snapshot && !snapshot.stopped && snapshot.state.status === "active";
+    snapshot && !snapshot.stopped && snapshot.state.status !== "handoff";
   const busy = pending || snapshot?.busy;
-  $("start").disabled = Boolean(active || busy);
+  $("start").disabled = Boolean(open || busy);
   for (const id of ["goal", "fields", "mode", "speech"])
-    $(id).disabled = Boolean(active || busy);
-  $("input").disabled = !active || busy || Boolean(recording);
-  $("send").disabled = !active || busy || Boolean(recording);
-  $("record").disabled = !active || busy;
-  $("stop").disabled = !active && !busy;
-  $("interrupt").disabled = !player || player.paused;
+    $(id).disabled = Boolean(open || busy);
+  $("input").disabled = !active || busy;
+  $("send").disabled = !active || busy;
+  $("record").disabled = !active || Boolean(recording);
+  $("stop").disabled = !open;
+  $("interrupt").disabled = !voiceSource && (!player || player.paused);
   $("sessionStatus").textContent = !snapshot
     ? "等待开始"
     : snapshot.stopped
@@ -105,10 +109,18 @@ function controls() {
           : busy
             ? "正在处理"
             : recording
-              ? "正在录音"
+              ? "正在聆听"
               : "等待回答";
 }
+let fieldsKey = "";
 function renderFields(fields) {
+  const key = JSON.stringify([
+    sid,
+    fields,
+    snapshot?.events.filter((e) => e.stage === "asr" && e.audio),
+  ]);
+  if (key === fieldsKey) return;
+  fieldsKey = key;
   $("fieldCards").replaceChildren();
   let confirmed = 0;
   for (const [name, value] of Object.entries(fields)) {
@@ -124,8 +136,19 @@ function renderFields(fields) {
     if (value.evidence?.length) {
       const details = node("details");
       details.append(node("summary", `${value.evidence.length} 条原话证据`));
-      for (const e of value.evidence)
+      for (const e of value.evidence) {
         details.append(node("blockquote", `第 ${e.turn} 轮 · ${e.quote}`));
+        const source = snapshot?.events.find(
+          (x) => x.stage === "asr" && x.turn === e.turn && x.audio,
+        );
+        if (source) {
+          const audio = node("audio");
+          audio.controls = true;
+          audio.preload = "none";
+          audio.src = source.audio;
+          details.append(audio);
+        }
+      }
       card.append(details);
     }
     $("fieldCards").append(card);
@@ -158,6 +181,7 @@ function renderEvent(e) {
   );
   const content = node("div", e.label + (e.status === "running" ? "…" : ""));
   if (e.text) content.append(node("p", e.text));
+  if (e.reason) content.append(node("p", "校验说明：" + e.reason));
   if (e.updates && Object.keys(e.updates).length)
     content.append(
       node(
@@ -221,6 +245,13 @@ async function playbackReport(url, status) {
   }
 }
 function interrupt() {
+  playbackToken++;
+  if (voiceSource) {
+    voiceSource.onended = null;
+    voiceSource.stop();
+    voiceSource = null;
+    playbackReport(voiceURL, "interrupted");
+  }
   if (player && !player.paused) {
     const url = player.dataset.url;
     player.pause();
@@ -228,25 +259,38 @@ function interrupt() {
   }
   controls();
 }
+let voiceContext = null,
+  voiceSource = null,
+  voiceURL = null;
+let playbackToken = 0;
 async function play(url) {
   interrupt();
-  player = new Audio(url);
-  player.dataset.url = url;
-  player.onended = () => {
-    playbackReport(url, "ended");
-    controls();
-  };
-  player.onerror = () => {
-    playbackReport(url, "failed");
-    notice("回复音频播放失败，可在过程记录中重试播放。");
-    controls();
-  };
+  const token = ++playbackToken;
+  if (!voiceContext || voiceContext.state !== "running") return;
   try {
-    await player.play();
-    await playbackReport(url, "started");
+    const bytes = await (await fetch(url)).arrayBuffer();
+    const buffer = await voiceContext.decodeAudioData(bytes);
+    if (
+      token !== playbackToken ||
+      speaking ||
+      queue.length ||
+      snapshot?.stopped
+    )
+      return;
+    voiceSource = voiceContext.createBufferSource();
+    voiceSource.buffer = buffer;
+    voiceSource.connect(voiceContext.destination);
+    voiceURL = url;
+    voiceSource.onended = () => {
+      voiceSource = null;
+      playbackReport(url, "ended");
+      controls();
+    };
+    voiceSource.start();
+    playbackReport(url, "started");
   } catch {
-    notice("浏览器阻止了自动播放，请在过程记录中点击音频播放。");
-    await playbackReport(url, "failed");
+    notice("回复播放失败，音频仍可在溯源记录中回放。");
+    playbackReport(url, "failed");
   }
   controls();
 }
@@ -262,8 +306,19 @@ async function poll() {
       if (e.id > lastEvent) {
         renderEvent(e);
         lastEvent = e.id;
-        if (e.stage === "tts" && e.audio && !snapshot.stopped) play(e.audio);
+        if (
+          e.stage === "tts" &&
+          e.audio &&
+          !snapshot.stopped &&
+          !suppressed.has(e.generation) &&
+          !speaking &&
+          !queue.length
+        )
+          play(e.audio);
       }
+    if (snapshot.stopped || snapshot.state.status === "handoff")
+      await stopListening();
+    else drain();
     controls();
   } catch (e) {
     notice(e.message);
@@ -284,6 +339,7 @@ $("start").onclick = async () => {
       .value.split("\n")
       .map((x) => x.trim())
       .filter(Boolean);
+    await startListening();
     const data = await api("/api/sessions", {
       goal: $("goal").value.trim(),
       required_fields: fields,
@@ -291,6 +347,8 @@ $("start").onclick = async () => {
       speech: $("speech").checked,
     });
     interrupt();
+    queue = [];
+    suppressed.clear();
     sid = data.id;
     sessionStorage.setItem("voice-session", sid);
     snapshot = data;
@@ -305,6 +363,7 @@ $("start").onclick = async () => {
     $("export").hidden = false;
     await poll();
   } catch (e) {
+    await stopListening();
     notice(e.message);
   } finally {
     pending = false;
@@ -339,7 +398,7 @@ $("input").onkeydown = (e) => {
 $("stop").onclick = async () => {
   if (!sid) return;
   interrupt();
-  if (recording) await stopRecording(false);
+  await stopListening();
   try {
     snapshot = await api(`/api/sessions/${sid}/stop`, {});
     await poll();
@@ -378,122 +437,187 @@ function wavBlob(chunks, rate) {
     }
   return new Blob([buffer], { type: "audio/wav" });
 }
-async function startRecording() {
-  interrupt();
-  notice("");
-  if (!navigator.mediaDevices?.getUserMedia)
-    throw new Error("此浏览器无法录音，请用 Chrome 或 Edge 打开本机地址。");
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
-  });
+let speaking = false,
+  queue = [],
+  sendingAudio = false,
+  micStream = null;
+let suppressed = new Set(),
+  speechStarted = 0,
+  splitting = false;
+let connectionJob = null,
+  micEpoch = 0;
+async function startListening() {
+  if (connectionJob) return connectionJob;
+  connectionJob = connectMicrophone();
   try {
-    if (snapshot?.stopped || snapshot?.state.status !== "active") {
-      throw new Error("会话已结束，录音未开始。");
+    await connectionJob;
+  } finally {
+    connectionJob = null;
+  }
+}
+async function connectMicrophone() {
+  if (recording) return;
+  const epoch = micEpoch;
+  if (!navigator.mediaDevices?.getUserMedia || !window.vad)
+    throw new Error("请使用 Chrome / Edge，并检查本地 VAD 资源。");
+  voiceContext ??= new AudioContext();
+  await voiceContext.resume();
+  micStream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+  });
+  if (epoch !== micEpoch) {
+    micStream.getTracks().forEach((t) => t.stop());
+    micStream = null;
+    throw new Error("语音连接已取消");
+  }
+  try {
+    ort.env.wasm.numThreads = 1;
+    recording = await vad.MicVAD.new({
+      model: "v5",
+      baseAssetPath: "/vendor/vad/",
+      onnxWASMBasePath: "/vendor/ort/",
+      ortConfig: (instance) => {
+        instance.env.wasm.numThreads = 1;
+        instance.env.wasm.proxy = false;
+      },
+      audioContext: voiceContext,
+      startOnLoad: false,
+      getStream: async () => micStream,
+      resumeStream: async () => micStream,
+      pauseStream: async () => {},
+      positiveSpeechThreshold: 0.6,
+      negativeSpeechThreshold: 0.35,
+      redemptionMs: 900,
+      preSpeechPadMs: 300,
+      minSpeechMs: 250,
+      submitUserSpeechOnPause: true,
+      onSpeechStart: () => {
+        speechStarted = Date.now();
+      },
+      onSpeechRealStart: () => {
+        if (
+          !recording ||
+          !sid ||
+          snapshot?.stopped ||
+          snapshot?.state.status === "handoff"
+        )
+          return;
+        speaking = true;
+        interrupt();
+        suppressed.add(snapshot.generation);
+        api(`/api/sessions/${sid}/interrupt`, {})
+          .then((r) => suppressed.add(r.generation))
+          .catch((e) => notice(e.message));
+        $("recordStatus").textContent = "正在听你说 · 停顿后自动提交";
+      },
+      onVADMisfire: () => {
+        speaking = false;
+        speechStarted = 0;
+      },
+      onSpeechEnd: (audio) => {
+        speaking = false;
+        speechStarted = 0;
+        if (
+          !recording ||
+          !sid ||
+          snapshot?.stopped ||
+          snapshot?.state.status === "handoff"
+        )
+          return;
+        if (queue.length >= 8) {
+          notice("待处理发言过多，请等待助手处理后重说本段。");
+          return;
+        }
+        queue.push(wavBlob([audio], 16000));
+        $("recordStatus").textContent = "语音已收取 · 自动识别中";
+        drain();
+      },
+      onFrameProcessed: () => {
+        if (speechStarted && Date.now() - speechStarted > 25000 && !splitting) {
+          splitting = true;
+          const mic = recording;
+          mic
+            ?.pause()
+            .then(() => {
+              if (recording === mic) return mic.start();
+            })
+            .finally(() => {
+              splitting = false;
+            });
+        }
+      },
+    });
+    if (epoch !== micEpoch) {
+      await stopListening();
+      return;
     }
-    const context = new AudioContext({ sampleRate: 16000 });
-    await context.resume();
-    const source = context.createMediaStreamSource(stream),
-      processor = context.createScriptProcessor(4096, 1, 1),
-      silent = context.createGain();
-    silent.gain.value = 0;
-    const rec = {
-      stream,
-      context,
-      source,
-      processor,
-      silent,
-      chunks: [],
-      samples: 0,
-      started: Date.now(),
-      timer: null,
-    };
-    processor.onaudioprocess = (e) => {
-      if (recording !== rec) return;
-      const input = e.inputBuffer.getChannelData(0);
-      const remaining = context.sampleRate * 30 - rec.samples;
-      if (remaining > 0) {
-        const chunk = new Float32Array(input.slice(0, remaining));
-        rec.chunks.push(chunk);
-        rec.samples += chunk.length;
-      }
-    };
-    source.connect(processor);
-    processor.connect(silent);
-    silent.connect(context.destination);
-    recording = rec;
-    rec.timer = setInterval(() => {
-      const seconds = Math.min(
-        30,
-        Math.floor((Date.now() - rec.started) / 1000),
-      );
-      $("recordStatus").textContent = `正在录音 ${seconds} / 30 秒`;
-      if (seconds >= 30) stopRecording(true);
-    }, 250);
-    $("record").textContent = "■ 停止录音";
-    $("record").classList.add("recording");
-    controls();
+    await recording.start();
+    $("recordStatus").textContent = "麦克风已连接 · 直接说话，自动判断停顿";
+    $("record").textContent = "麦克风已连接";
   } catch (e) {
-    stream.getTracks().forEach((t) => t.stop());
+    await stopListening();
     throw e;
   }
 }
-async function stopRecording(upload) {
-  const rec = recording;
-  if (!rec) return;
+async function stopListening() {
+  micEpoch++;
+  const mic = recording;
   recording = null;
-  clearInterval(rec.timer);
-  rec.processor.disconnect();
-  rec.source.disconnect();
-  rec.silent.disconnect();
-  rec.stream.getTracks().forEach((t) => t.stop());
-  await rec.context.close();
-  $("record").textContent = "● 录音";
-  $("record").classList.remove("recording");
-  $("recordStatus").textContent = "录音转写后可修改，再发送";
-  if (!upload) {
-    controls();
-    return;
-  }
-  pending = true;
-  controls();
+  micStream?.getTracks().forEach((t) => t.stop());
+  micStream = null;
   try {
-    const result = await api(
-      `/api/sessions/${sid}/transcribe`,
-      wavBlob(rec.chunks, rec.context.sampleRate),
-      true,
-    );
-    $("input").value = result.text;
-    notice("转写已完成，请核对金额、否定和条件后发送。");
-    await poll();
+    mic?.destroy();
+  } catch {
+    // vad-web destroy() throws if model loading finished before audio initialization.
+    // Media tracks have already been stopped, including cancellation during startup.
+  }
+  queue = [];
+  speaking = false;
+  speechStarted = 0;
+  $("record").textContent = "恢复语音连接";
+  $("recordStatus").textContent = "麦克风未连接";
+}
+async function drain() {
+  if (
+    sendingAudio ||
+    !queue.length ||
+    snapshot?.busy ||
+    pending ||
+    snapshot?.stopped
+  )
+    return;
+  sendingAudio = true;
+  const audio = queue.shift();
+  try {
+    const result = await api(`/api/sessions/${sid}/audio-turn`, audio, true);
+    if (snapshot.stopped) return;
+    snapshot.busy = true;
+    snapshot.generation = result.generation;
+    if (speaking || queue.length) suppressed.add(result.generation);
+    $("recordStatus").textContent = "持续聆听 · 可随时补充或更正";
   } catch (e) {
-    notice(e.message);
+    if (e.status === 409 && !snapshot.stopped) {
+      queue.unshift(audio);
+      snapshot.busy = true;
+    } else {
+      notice(`这段语音未提交：${e.message}。请重新说一遍。`);
+    }
   } finally {
-    pending = false;
-    controls();
-    $("input").focus();
+    sendingAudio = false;
   }
 }
-$("record").onclick = async () => {
-  if (pending) return;
-  pending = true;
-  controls();
-  try {
-    if (recording) await stopRecording(true);
-    else await startRecording();
-  } catch (e) {
-    notice(
-      e.name === "NotAllowedError"
-        ? "麦克风权限未开启，请允许浏览器访问麦克风，或输入文字。"
-        : e.message,
-    );
-  } finally {
-    pending = false;
-    controls();
-  }
-};
-window.addEventListener("beforeunload", () => {
-  if (recording) recording.stream.getTracks().forEach((t) => t.stop());
-});
+$("record").onclick = () =>
+  startListening()
+    .then(controls)
+    .catch((e) => notice(e.message));
+window.addEventListener("beforeunload", () =>
+  micStream?.getTracks().forEach((t) => t.stop()),
+);
 renderFields(
   Object.fromEntries(
     $("fields")

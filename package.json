@@ -1,0 +1,1 @@
+{"name":"sim7600-voice-console","version":"0.2.0","private":true,"license":"MIT","scripts":{"vendor":"node scripts/vendor-vad.cjs","test":"node --test tests-js/*.test.cjs"},"dependencies":{"@ricky0123/vad-web":"0.0.29","onnxruntime-web":"1.22.0"}}

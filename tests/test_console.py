@@ -159,3 +159,97 @@ def test_local_request_boundaries(tmp_path):
 def test_invalid_or_silent_audio_rejected(data):
     with pytest.raises(ValueError):
         decode_wav(data)
+
+
+def test_automatic_audio_turn_keeps_source_and_accepts_correction(tmp_path):
+    async def run():
+        class CorrectingSpeech(Speech):
+            text = "每年2400元"
+
+            def transcribe(self, data):
+                decode_wav(data)
+                return self.text
+
+        speech = CorrectingSpeech()
+        app = create_app(
+            tmp_path,
+            provider_factory=lambda: MockProvider(
+                {
+                    text: [
+                        {"field": "费用", "value": text, "evidence": text, "status": "confirmed"}
+                    ]
+                    for text in ["每年2400元", "更正，每年3000元"]
+                }
+            ),
+            speech_engine=speech,
+        )
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://testserver", headers=HEADERS
+        ) as client:
+            sid = (
+                await client.post(
+                    "/api/sessions",
+                    json={"goal": "确认费用", "required_fields": ["费用"], "speech": True},
+                )
+            ).json()["id"]
+            await settled(client, sid)
+            for turn, text in enumerate(["每年2400元", "更正，每年3000元"], 1):
+                speech.text = text
+                response = await client.post(f"/api/sessions/{sid}/audio-turn", content=wav_bytes())
+                assert response.status_code == 200
+                assert response.json()["accepted"]
+                result = await settled(client, sid)
+                assert result["state"]["turns"] == turn
+                assert result["state"]["fields"]["费用"]["evidence"][-1]["quote"] == text
+                source = next(
+                    e for e in result["events"] if e["stage"] == "asr" and e.get("turn") == turn
+                )
+                assert (await client.get(source["audio"])).content == wav_bytes()
+                assert any(
+                    e["stage"] == "tts"
+                    and e.get("audio")
+                    and e["generation"] == response.json()["generation"]
+                    for e in result["events"]
+                )
+            await client.post(f"/api/sessions/{sid}/stop", json={})
+            assert (
+                await client.post(f"/api/sessions/{sid}/audio-turn", content=wav_bytes())
+            ).status_code == 409
+
+    asyncio.run(run())
+
+
+def test_stop_during_automatic_asr_discards_late_input(tmp_path):
+    import threading
+
+    async def run():
+        entered, release = threading.Event(), threading.Event()
+
+        class SlowSpeech(Speech):
+            def transcribe(self, data):
+                entered.set()
+                release.wait(3)
+                return super().transcribe(data)
+
+        app = create_app(tmp_path, provider_factory=MockProvider, speech_engine=SlowSpeech())
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://testserver", headers=HEADERS
+        ) as client:
+            sid = (
+                await client.post(
+                    "/api/sessions", json={"goal": "确认费用", "required_fields": ["费用"]}
+                )
+            ).json()["id"]
+            await settled(client, sid)
+            job = asyncio.create_task(
+                client.post(f"/api/sessions/{sid}/audio-turn", content=wav_bytes())
+            )
+            assert await asyncio.to_thread(entered.wait, 2)
+            await client.post(f"/api/sessions/{sid}/stop", json={})
+            release.set()
+            assert (await job).status_code == 409
+            result = await settled(client, sid)
+            assert result["state"]["turns"] == 0
+            assert not any(e["stage"] == "input" for e in result["events"])
+
+    asyncio.run(run())
