@@ -1,0 +1,624 @@
+{
+  "method": "Synthetic audio-turn HTTP API with real ASR/Core/TTS; no physical microphone or browser playback tested.",
+  "mode": "local",
+  "health": {
+    "model": "qwen3.5:4b",
+    "llm": true,
+    "running_models": [
+      {
+        "name": "qwen3.5:4b",
+        "size": 3341958511,
+        "size_vram": 3341958511
+      }
+    ],
+    "speech": {
+      "asr": true,
+      "tts": true
+    },
+    "transport": "本地模拟 · 未连接电话线路",
+    "context": 8192
+  },
+  "decisions": [
+    {
+      "source": "费用大概两千多，具体我还不确定。",
+      "transcript": "费用大概2000多，具体我还不确定。",
+      "fields": {
+        "费用": {
+          "status": "partial",
+          "value": "2000多",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source": "费用确定为每年两千四百元。",
+      "transcript": "费用确定为每年2400元。",
+      "fields": {
+        "费用": {
+          "status": "confirmed",
+          "value": "每年2400元",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            },
+            {
+              "turn": 2,
+              "quote": "费用确定为每年2400元。"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source": "更正一下，刚才说错了，费用是每年三千元。",
+      "transcript": "更正一下，刚才说错了，费用是每年3000元。",
+      "fields": {
+        "费用": {
+          "status": "confirmed",
+          "value": "每年3000元",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            },
+            {
+              "turn": 2,
+              "quote": "费用确定为每年2400元。"
+            },
+            {
+              "turn": 3,
+              "quote": "更正一下，刚才说错了，费用是每年3000元。"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "session": {
+    "id": "61a2822e3fb04dc69cd63acf4361571a",
+    "mode": "local",
+    "transport": "local_simulation",
+    "stopped": false,
+    "busy": false,
+    "generation": 4,
+    "state": {
+      "task": {
+        "goal": "确认每年的费用",
+        "required_fields": [
+          "费用"
+        ]
+      },
+      "history": [
+        {
+          "role": "assistant",
+          "content": "请问每年的费用是多少？"
+        },
+        {
+          "role": "user",
+          "content": "费用大概2000多，具体我还不确定。"
+        },
+        {
+          "role": "assistant",
+          "content": "费用大概2000多，具体我还不确定。"
+        },
+        {
+          "role": "user",
+          "content": "费用确定为每年2400元。"
+        },
+        {
+          "role": "assistant",
+          "content": "好的，相关信息已经了解清楚了，谢谢您，再见。"
+        },
+        {
+          "role": "user",
+          "content": "更正一下，刚才说错了，费用是每年3000元。"
+        },
+        {
+          "role": "assistant",
+          "content": "好的，相关信息已经了解清楚了，谢谢您，再见。"
+        }
+      ],
+      "fields": {
+        "费用": {
+          "status": "confirmed",
+          "value": "每年3000元",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            },
+            {
+              "turn": 2,
+              "quote": "费用确定为每年2400元。"
+            },
+            {
+              "turn": 3,
+              "quote": "更正一下，刚才说错了，费用是每年3000元。"
+            }
+          ]
+        }
+      },
+      "status": "completed",
+      "current_decision": {
+        "response": "好的，相关信息已经了解清楚了，谢谢您，再见。",
+        "action": "finish",
+        "target_field": null,
+        "updates": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年3000元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              },
+              {
+                "turn": 2,
+                "quote": "费用确定为每年2400元。"
+              },
+              {
+                "turn": 3,
+                "quote": "更正一下，刚才说错了，费用是每年3000元。"
+              }
+            ]
+          }
+        },
+        "reason": "All required fields are confirmed"
+      },
+      "final_result": {
+        "completed": true,
+        "status": "completed",
+        "goal": "确认每年的费用",
+        "fields": {
+          "费用": "每年3000元"
+        },
+        "field_details": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年3000元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              },
+              {
+                "turn": 2,
+                "quote": "费用确定为每年2400元。"
+              },
+              {
+                "turn": 3,
+                "quote": "更正一下，刚才说错了，费用是每年3000元。"
+              }
+            ]
+          }
+        },
+        "missing_fields": []
+      },
+      "turns": 3,
+      "stalled_turns": 0
+    },
+    "result": {
+      "completed": true,
+      "status": "completed",
+      "goal": "确认每年的费用",
+      "fields": {
+        "费用": "每年3000元"
+      },
+      "field_details": {
+        "费用": {
+          "status": "confirmed",
+          "value": "每年3000元",
+          "evidence": [
+            {
+              "turn": 1,
+              "quote": "费用大概2000多，具体我还不确定。"
+            },
+            {
+              "turn": 2,
+              "quote": "费用确定为每年2400元。"
+            },
+            {
+              "turn": 3,
+              "quote": "更正一下，刚才说错了，费用是每年3000元。"
+            }
+          ]
+        }
+      },
+      "missing_fields": []
+    },
+    "events": [
+      {
+        "id": 1,
+        "time": 1788865329.425741,
+        "stage": "session",
+        "status": "done",
+        "generation": 0,
+        "label": "本地语音会话开始"
+      },
+      {
+        "id": 2,
+        "time": 1788865329.4299147,
+        "stage": "llm",
+        "status": "running",
+        "generation": 1,
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 3,
+        "time": 1788865425.971682,
+        "stage": "llm",
+        "status": "done",
+        "generation": 1,
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 108436,
+        "action": "continue"
+      },
+      {
+        "id": 4,
+        "time": 1788865425.9716895,
+        "stage": "fields",
+        "status": "done",
+        "generation": 1,
+        "label": "字段与证据",
+        "updates": {},
+        "reason": "任务目标为确认每年费用，当前状态未知且无历史数据，需主动询问该核心信息。"
+      },
+      {
+        "id": 5,
+        "time": 1788865425.9716914,
+        "stage": "reply",
+        "status": "done",
+        "generation": 1,
+        "label": "助手回复",
+        "text": "请问每年的费用是多少？",
+        "action": "continue"
+      },
+      {
+        "id": 6,
+        "time": 1788865425.9754405,
+        "stage": "tts",
+        "status": "running",
+        "generation": 1,
+        "label": "合成中文回复"
+      },
+      {
+        "id": 7,
+        "time": 1788865429.3194528,
+        "stage": "tts",
+        "status": "done",
+        "generation": 1,
+        "label": "回复音频就绪",
+        "duration_ms": 3368,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/df4f46f06ab84a379562975ad58b8770.wav"
+      },
+      {
+        "id": 8,
+        "time": 1788865431.3133712,
+        "stage": "asr",
+        "status": "running",
+        "generation": 1,
+        "label": "识别本地录音"
+      },
+      {
+        "id": 9,
+        "time": 1788865435.3753712,
+        "stage": "asr",
+        "status": "done",
+        "generation": 1,
+        "label": "语音自动提交",
+        "turn": 1,
+        "text": "费用大概2000多，具体我还不确定。",
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/6c13ae57302f4e67969af90b534ea834.wav",
+        "duration_ms": 4052
+      },
+      {
+        "id": 10,
+        "time": 1788865435.3753817,
+        "stage": "input",
+        "status": "done",
+        "generation": 1,
+        "label": "自动提交对方发言",
+        "text": "费用大概2000多，具体我还不确定。",
+        "turn": 1,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/6c13ae57302f4e67969af90b534ea834.wav"
+      },
+      {
+        "id": 11,
+        "time": 1788865435.379346,
+        "stage": "llm",
+        "status": "running",
+        "generation": 2,
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 12,
+        "time": 1788865437.845499,
+        "stage": "llm",
+        "status": "done",
+        "generation": 2,
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 2466,
+        "action": "clarify"
+      },
+      {
+        "id": 13,
+        "time": 1788865437.8455122,
+        "stage": "fields",
+        "status": "done",
+        "generation": 2,
+        "label": "字段与证据",
+        "updates": {
+          "费用": {
+            "status": "partial",
+            "value": "2000多",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              }
+            ]
+          }
+        },
+        "reason": "用户确认了费用范围在2000多，但表示不确定具体金额，状态更新为partial。需进一步询问确切数字或是否有其他条件影响费用。"
+      },
+      {
+        "id": 14,
+        "time": 1788865437.8455138,
+        "stage": "reply",
+        "status": "done",
+        "generation": 2,
+        "label": "助手回复",
+        "text": "费用大概2000多，具体我还不确定。",
+        "action": "clarify"
+      },
+      {
+        "id": 15,
+        "time": 1788865437.8507397,
+        "stage": "tts",
+        "status": "running",
+        "generation": 2,
+        "label": "合成中文回复"
+      },
+      {
+        "id": 16,
+        "time": 1788865438.0130613,
+        "stage": "tts",
+        "status": "done",
+        "generation": 2,
+        "label": "回复音频就绪",
+        "duration_ms": 162,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/dc1308fefc7947d58406d3a8a86a3be1.wav"
+      },
+      {
+        "id": 17,
+        "time": 1788865438.2733893,
+        "stage": "asr",
+        "status": "running",
+        "generation": 2,
+        "label": "识别本地录音"
+      },
+      {
+        "id": 18,
+        "time": 1788865450.3056335,
+        "stage": "asr",
+        "status": "done",
+        "generation": 2,
+        "label": "语音自动提交",
+        "turn": 2,
+        "text": "费用确定为每年2400元。",
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/cd95af870e0a45159e4f08df6a0ba67e.wav",
+        "duration_ms": 123
+      },
+      {
+        "id": 19,
+        "time": 1788865450.3056414,
+        "stage": "input",
+        "status": "done",
+        "generation": 2,
+        "label": "自动提交对方发言",
+        "text": "费用确定为每年2400元。",
+        "turn": 2,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/cd95af870e0a45159e4f08df6a0ba67e.wav"
+      },
+      {
+        "id": 20,
+        "time": 1788865450.3099172,
+        "stage": "llm",
+        "status": "running",
+        "generation": 3,
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 21,
+        "time": 1788865440.6207833,
+        "stage": "llm",
+        "status": "done",
+        "generation": 3,
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 2230,
+        "action": "finish"
+      },
+      {
+        "id": 22,
+        "time": 1788865440.6207955,
+        "stage": "fields",
+        "status": "done",
+        "generation": 3,
+        "label": "字段与证据",
+        "updates": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年2400元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              },
+              {
+                "turn": 2,
+                "quote": "费用确定为每年2400元。"
+              }
+            ]
+          }
+        },
+        "reason": "All required fields are confirmed"
+      },
+      {
+        "id": 23,
+        "time": 1788865440.620797,
+        "stage": "reply",
+        "status": "done",
+        "generation": 3,
+        "label": "助手回复",
+        "text": "好的，相关信息已经了解清楚了，谢谢您，再见。",
+        "action": "finish"
+      },
+      {
+        "id": 24,
+        "time": 1788865440.6250286,
+        "stage": "tts",
+        "status": "running",
+        "generation": 3,
+        "label": "合成中文回复"
+      },
+      {
+        "id": 25,
+        "time": 1788865440.891162,
+        "stage": "tts",
+        "status": "done",
+        "generation": 3,
+        "label": "回复音频就绪",
+        "duration_ms": 266,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/b63d50468de3403fa8289b6d47fd0254.wav"
+      },
+      {
+        "id": 26,
+        "time": 1788865440.8911684,
+        "stage": "complete",
+        "status": "done",
+        "generation": 3,
+        "label": "任务已完成"
+      },
+      {
+        "id": 27,
+        "time": 1788865441.4159958,
+        "stage": "asr",
+        "status": "running",
+        "generation": 3,
+        "label": "识别本地录音"
+      },
+      {
+        "id": 28,
+        "time": 1788865441.5529358,
+        "stage": "asr",
+        "status": "done",
+        "generation": 3,
+        "label": "语音自动提交",
+        "turn": 3,
+        "text": "更正一下，刚才说错了，费用是每年3000元。",
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/0ec817d400334d6ab003da93b0f8331f.wav",
+        "duration_ms": 137
+      },
+      {
+        "id": 29,
+        "time": 1788865441.5529428,
+        "stage": "input",
+        "status": "done",
+        "generation": 3,
+        "label": "自动提交对方发言",
+        "text": "更正一下，刚才说错了，费用是每年3000元。",
+        "turn": 3,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/0ec817d400334d6ab003da93b0f8331f.wav"
+      },
+      {
+        "id": 30,
+        "time": 1788865441.5571325,
+        "stage": "llm",
+        "status": "running",
+        "generation": 4,
+        "label": "模型理解与字段提取"
+      },
+      {
+        "id": 31,
+        "time": 1788865443.9907527,
+        "stage": "llm",
+        "status": "done",
+        "generation": 4,
+        "label": "模型返回并完成 Core 校验",
+        "duration_ms": 2440,
+        "action": "finish"
+      },
+      {
+        "id": 32,
+        "time": 1788865443.99076,
+        "stage": "fields",
+        "status": "done",
+        "generation": 4,
+        "label": "字段与证据",
+        "updates": {
+          "费用": {
+            "status": "confirmed",
+            "value": "每年3000元",
+            "evidence": [
+              {
+                "turn": 1,
+                "quote": "费用大概2000多，具体我还不确定。"
+              },
+              {
+                "turn": 2,
+                "quote": "费用确定为每年2400元。"
+              },
+              {
+                "turn": 3,
+                "quote": "更正一下，刚才说错了，费用是每年3000元。"
+              }
+            ]
+          }
+        },
+        "reason": "All required fields are confirmed"
+      },
+      {
+        "id": 33,
+        "time": 1788865443.9907615,
+        "stage": "reply",
+        "status": "done",
+        "generation": 4,
+        "label": "助手回复",
+        "text": "好的，相关信息已经了解清楚了，谢谢您，再见。",
+        "action": "finish"
+      },
+      {
+        "id": 34,
+        "time": 1788865443.9949217,
+        "stage": "tts",
+        "status": "running",
+        "generation": 4,
+        "label": "合成中文回复"
+      },
+      {
+        "id": 35,
+        "time": 1788865444.2521164,
+        "stage": "tts",
+        "status": "done",
+        "generation": 4,
+        "label": "回复音频就绪",
+        "duration_ms": 257,
+        "audio": "/api/sessions/61a2822e3fb04dc69cd63acf4361571a/audio/b94b05dc1658438c997e9619d39d2dc8.wav"
+      },
+      {
+        "id": 36,
+        "time": 1788865444.2521217,
+        "stage": "complete",
+        "status": "done",
+        "generation": 4,
+        "label": "任务已完成"
+      }
+    ]
+  }
+}

@@ -24,3 +24,27 @@
 
 `node scripts/vad_smoke.cjs <16kHz-float32-raw-file>` 用于显式的两段 VAD 回环检测，
 输入应为两段语音，每段之间和结尾有至少 1.5 秒静音。该检查不在默认 CI 中运行。
+
+## Docker GPU 完整回环
+
+实际启动 `sim7600-console`、`sim7600-ollama`，两者健康检查通过。
+容器内 nvidia-smi 显示 RTX 4060 / 8188 MiB / 驱动 591.86；ollama ps 显示
+Qwen3.5 4B、8192 上下文、100% GPU，模型分配 3,341,958,511 字节全部在 GPU。
+
+真实 ASR + 本地 LLM + TTS 自动 HTTP 链路通过三轮：
+
+| 发言 | 字段结果 | 状态 |
+| --- | --- | --- |
+| 费用大概两千多，具体还不确定 | 2000 多 | partial |
+| 费用确定为每年两千四百元 | 每年 2400 元 | confirmed |
+| 更正，费用是每年三千元 | 每年 3000 元 | confirmed |
+
+三轮原话证据与对应音频全部保留，完成状态后的更正也已处理。
+原始结果：[continuous-voice-docker-smoke.json](continuous-voice-docker-smoke.json)。
+首次冷启动模型阶段共 108.436 秒（包含 Core 重试），首次 ASR 4.052 秒、TTS 3.368 秒。
+预热后三轮模型阶段分别为 2.466 / 2.230 / 2.440 秒，后两次 ASR 为 0.123 / 0.137 秒，
+三轮 TTS 为 0.162 / 0.266 / 0.257 秒。阶段耗时不含真实麦克风、浏览器 VAD 停顿、
+网络往返与扬声器播放，不等同于端到端通话延迟。
+
+代码提交 01f2f7f 的 GitHub CI 已全部通过：Python 3.11/3.12/3.13、Windows 本地
+控制台测试（含 Node 测试）与 Docker 构建/原有 CLI 验证。
