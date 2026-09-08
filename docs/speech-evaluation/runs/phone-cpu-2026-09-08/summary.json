@@ -1,0 +1,117 @@
+{
+  "tts": [
+    {
+      "name": "melo",
+      "mean_s": 1.5625332749994414,
+      "rtf": 0.4855782209143471
+    },
+    {
+      "name": "matcha",
+      "mean_s": 0.3156394466672888,
+      "rtf": 0.08547226449914405
+    },
+    {
+      "name": "kokoro_zh",
+      "mean_s": 3.015030161666558,
+      "rtf": 0.761964934589686
+    }
+  ],
+  "asr": [
+    {
+      "name": "zipformer_small",
+      "condition": "clean",
+      "cer": 0.10995128740431455,
+      "all_keyphrases": 105,
+      "total": 180,
+      "rtf": 0.0613954822698072
+    },
+    {
+      "name": "zipformer_small",
+      "condition": "narrow_ulaw",
+      "cer": 0.0824634655532359,
+      "all_keyphrases": 115,
+      "total": 180,
+      "rtf": 0.058798109409619256
+    },
+    {
+      "name": "zipformer_small",
+      "condition": "narrow_noise12db_ulaw",
+      "cer": 0.1464857341684064,
+      "all_keyphrases": 82,
+      "total": 180,
+      "rtf": 0.059389508665809713
+    },
+    {
+      "name": "zipformer_zh",
+      "condition": "clean",
+      "cer": 0.06297842727905359,
+      "all_keyphrases": 129,
+      "total": 180,
+      "rtf": 0.15468144159379454
+    },
+    {
+      "name": "zipformer_zh",
+      "condition": "narrow_ulaw",
+      "cer": 0.06263048016701461,
+      "all_keyphrases": 129,
+      "total": 180,
+      "rtf": 0.15171307149603172
+    },
+    {
+      "name": "zipformer_zh",
+      "condition": "narrow_noise12db_ulaw",
+      "cer": 0.11725817675713292,
+      "all_keyphrases": 91,
+      "total": 180,
+      "rtf": 0.15184724819297557
+    },
+    {
+      "name": "paraformer_streaming",
+      "condition": "clean",
+      "cer": 0.054627696590118305,
+      "all_keyphrases": 133,
+      "total": 180,
+      "rtf": 0.10991656422958365
+    },
+    {
+      "name": "paraformer_streaming",
+      "condition": "narrow_ulaw",
+      "cer": 0.058107167710508,
+      "all_keyphrases": 127,
+      "total": 180,
+      "rtf": 0.10802545779102851
+    },
+    {
+      "name": "paraformer_streaming",
+      "condition": "narrow_noise12db_ulaw",
+      "cer": 0.1127348643006263,
+      "all_keyphrases": 94,
+      "total": 180,
+      "rtf": 0.10749859455596851
+    },
+    {
+      "name": "sensevoice",
+      "condition": "clean",
+      "cer": 0.029227557411273485,
+      "all_keyphrases": 153,
+      "total": 180,
+      "rtf": 0.06024266040698107
+    },
+    {
+      "name": "sensevoice",
+      "condition": "narrow_ulaw",
+      "cer": 0.032359081419624215,
+      "all_keyphrases": 156,
+      "total": 180,
+      "rtf": 0.05781005671918881
+    },
+    {
+      "name": "sensevoice",
+      "condition": "narrow_noise12db_ulaw",
+      "cer": 0.05010438413361169,
+      "all_keyphrases": 135,
+      "total": 180,
+      "rtf": 0.0584027176467141
+    }
+  ]
+}
