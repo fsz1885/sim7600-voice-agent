@@ -73,7 +73,7 @@ async function refreshHealth() {
     health = await api("/api/health");
     $("llmDot").className = "dot " + (health.llm ? "" : "bad");
     $("modelStatus").textContent =
-      health.model + (health.llm ? " · 已安装" : " · 未就绪");
+      health.model + (health.llm ? " · 可连接" : " · 未就绪");
     for (const type of ["asr", "tts"]) {
       $(type + "Dot").className = "dot " + (health.speech[type] ? "" : "bad");
       $(type + "Status").textContent =
@@ -382,7 +382,7 @@ $("start").onclick = async () => {
   try {
     if ($("mode").value === "local" && !health?.llm)
       throw new Error(
-        "本地模型尚未就绪。请完成模型安装并刷新状态，或明确选择规则模拟。",
+        "模型服务尚未就绪。请检查服务地址与认证并刷新状态，或明确选择规则模拟。",
       );
     const fields = $("fields")
       .value.split("\n")

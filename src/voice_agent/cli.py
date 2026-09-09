@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .compatible_provider import configured_provider
 from .core import Agent
 from .local_provider import DEFAULT_MODEL, OllamaProvider
 from .models import State, Task
@@ -41,8 +42,13 @@ async def chat(path: Path, scripted: bool = False) -> int:
             os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
             int(os.getenv("LLM_CONTEXT", "8192")),
         )
+    elif provider_name == "compatible":
+        provider = configured_provider(
+            os.getenv("LLM_MODEL") or None, timeout,
+            int(os.getenv("LLM_CONTEXT", "8192")), name="compatible",
+        )
     else:
-        raise ValueError("LLM_PROVIDER must be mock, anthropic, kimi or ollama")
+        raise ValueError("LLM_PROVIDER must be mock, anthropic, kimi, ollama or compatible")
     if scripted and provider_name != "mock":
         raise ValueError("demo is offline-only; set LLM_PROVIDER=mock")
     if scripted and not dialogue:

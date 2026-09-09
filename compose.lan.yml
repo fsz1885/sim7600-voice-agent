@@ -1,0 +1,32 @@
+name: sim7600-voice-agent
+services:
+  console:
+    build:
+      context: .
+      dockerfile: Dockerfile.console
+    container_name: sim7600-console
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8765:8765"
+    environment:
+      VOICE_LLM_PROVIDER: compatible
+      LLM_BASE_URL: ${VOICE_REMOTE_URL:-http://10.3.71.235:8080/v1}
+      LLM_MODEL: ${VOICE_REMOTE_MODEL:-sim7600-local}
+      LLM_API_KEY_FILE: /run/secrets/llm_api_key
+      LLM_TIMEOUT_SECONDS: "90"
+      LLM_CONTEXT: "8192"
+      VOICE_MODELS_DIR: /models
+      VOICE_DATA_DIR: /data
+    secrets:
+      - llm_api_key
+    volumes:
+      - ./docs/speech-evaluation/models:/models:ro
+      - ./local-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,json; d=json.load(urllib.request.urlopen('http://127.0.0.1:8765/api/health',timeout=5)); assert d['llm'] and all(d['speech'].values())"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+secrets:
+  llm_api_key:
+    file: ./local-data/3070-api-key.txt

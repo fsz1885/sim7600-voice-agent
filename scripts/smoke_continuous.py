@@ -14,9 +14,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8765")
     parser.add_argument("--mode", choices=["local", "mock"], default="local")
+    parser.add_argument("--models", type=Path, default=Path("models"))
     parser.add_argument("--output", type=Path, default=Path("local-data/continuous-smoke.json"))
     args = parser.parse_args()
-    speech = LocalSpeech(Path("models"))
+    speech = LocalSpeech(args.models)
     with httpx.Client(
         base_url=args.base_url, timeout=180, trust_env=False, headers={"X-Voice-Console": "1"}
     ) as client:

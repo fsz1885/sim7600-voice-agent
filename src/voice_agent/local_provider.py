@@ -65,9 +65,7 @@ class OllamaProvider:
         self.calls: list[dict] = []
         self.on_preview = None
 
-    async def propose(self, task: Task, state: State, error: str | None = None) -> str:
-        if self.on_preview:
-            self.on_preview("")
+    def request_payload(self, task: Task, state: State, error: str | None = None):
         content = json.dumps(
             {
                 "task": task.model_dump(),
@@ -93,7 +91,7 @@ class OllamaProvider:
         prompt = SYSTEM_PROMPT + "\nJSON Schema:\n" + json.dumps(schema, ensure_ascii=False)
         if len(content) + len(prompt) > self.context - 1600:
             raise ProviderError("Local context budget exceeded")
-        payload = {
+        return {
             "model": self.model,
             "stream": self.on_preview is not None,
             "think": False,
@@ -105,6 +103,10 @@ class OllamaProvider:
                 {"role": "user", "content": content},
             ],
         }
+    async def propose(self, task: Task, state: State, error: str | None = None) -> str:
+        if self.on_preview:
+            self.on_preview("")
+        payload = self.request_payload(task, state, error)
         try:
             async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
                 if self.on_preview is None:

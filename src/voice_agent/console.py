@@ -17,8 +17,9 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+from .compatible_provider import CompatibleProvider, configured_provider
 from .core import Agent
-from .local_provider import DEFAULT_MODEL, OllamaProvider
+from .local_provider import OllamaProvider
 from .models import State, Task
 from .providers import MockProvider
 from .speech import MAX_AUDIO_BYTES, LocalSpeech
@@ -93,11 +94,11 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
     speech = speech_engine or LocalSpeech(
         Path(models_dir or os.getenv("VOICE_MODELS_DIR", "models"))
     )
-    model = os.getenv("LLM_MODEL", DEFAULT_MODEL)
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+    model = os.getenv("LLM_MODEL") or None
     timeout = float(os.getenv("LLM_TIMEOUT_SECONDS", "90"))
     context = int(os.getenv("LLM_CONTEXT", "8192"))
-    local = OllamaProvider(model, timeout, base_url, context)
+    local = configured_provider(model, timeout, context)
+    model = local.model
     sessions: dict[str, Session] = {}
     gate = asyncio.Lock()
     preview_gate = asyncio.Lock()
@@ -229,19 +230,26 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
         available, running = False, []
         try:
             async with httpx.AsyncClient(timeout=2, trust_env=False) as client:
-                res = await client.get(local.base_url + "/api/tags")
-                res.raise_for_status()
-                available = any(m.get("name") == model for m in res.json().get("models", []))
-                res = await client.get(local.base_url + "/api/ps")
-                if res.is_success:
-                    running = [
-                        {k: m.get(k) for k in ("name", "size", "size_vram")}
-                        for m in res.json().get("models", [])
-                    ]
+                if isinstance(local, CompatibleProvider):
+                    res = await client.get(local.base_url + "/models", headers=local.headers)
+                    res.raise_for_status()
+                    available = any(m.get("id") == model for m in res.json().get("data", []))
+                else:
+                    res = await client.get(local.base_url + "/api/tags")
+                    res.raise_for_status()
+                    available = any(m.get("name") == model for m in res.json().get("models", []))
+                    res = await client.get(local.base_url + "/api/ps")
+                    if res.is_success:
+                        running = [
+                            {k: m.get(k) for k in ("name", "size", "size_vram")}
+                            for m in res.json().get("models", [])
+                        ]
         except (httpx.HTTPError, ValueError, TypeError):
             pass
         return {
             "model": model,
+            "provider": os.getenv("VOICE_LLM_PROVIDER", "ollama"),
+            "endpoint": local.base_url,
             "llm": available,
             "running_models": running,
             "speech": speech.availability(),
@@ -265,7 +273,7 @@ def create_app(data_dir=None, models_dir=None, provider_factory=None, speech_eng
             provider_factory()
             if provider_factory
             else (
-                OllamaProvider(model, timeout, base_url, context)
+                configured_provider(model, timeout, context)
                 if body.mode == "local"
                 else MockProvider()
             )

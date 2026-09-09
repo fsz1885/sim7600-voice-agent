@@ -253,3 +253,7 @@ Docker、固定依赖、MIT License 和基础 CI。
 测量完成率、重复询问率和延迟。控制台 ASR 把最终转写传给 `user_text`，
 TTS 消费 `decision.response`，电话适配层根据 finish / handoff 管理通话；
 SIM7600 仅属于电话适配层，不进入 Agent Core。当前没有实现电话硬件适配；连续语音通过浏览器麦克风模拟。
+# 内网模型部署
+
+使用另一台机器上的 llama.cpp，同时在本机运行语音控制台，见
+[内网部署与 Provider 切换](docs/lan-deployment.md)。

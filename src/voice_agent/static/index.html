@@ -29,7 +29,7 @@
       </header>
       <section class="health" aria-label="运行环境">
         <div>
-          <span id="llmDot" class="dot gray"></span><b>本地大模型</b
+          <span id="llmDot" class="dot gray"></span><b>配置的大模型</b
           ><small id="modelStatus">正在检测…</small>
         </div>
         <div>
@@ -67,7 +67,7 @@ ICP备案支持
           >
           <label for="mode">处理方式</label
           ><select id="mode">
-            <option value="local">本地大模型 · 自然语言理解</option>
+            <option value="local">配置的大模型 · 自然语言理解</option>
             <option value="mock">规则模拟 · 不调用大模型</option>
           </select>
           <label class="checkbox"
@@ -78,7 +78,7 @@ ICP备案支持
             开始语音通话 <span>↗</span>
           </button>
           <p class="hint">
-            录音与模型处理均在本机。此处不拨打真实电话；规则模拟不具备通用语义理解。
+            录音保存在本机，转写文本与字段会发送到配置的模型服务。此处不拨打真实电话；规则模拟不具备通用语义理解。
           </p>
         </section>
         <section class="panel conversation">
