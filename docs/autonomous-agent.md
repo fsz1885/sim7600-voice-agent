@@ -58,7 +58,7 @@ AGENT_DATA_DIR、HARDWARE_URL、HARDWARE_KEY_FILE、VOICE_MODELS_DIR。
 数据目录默认 `local-data/agent/`：tasks.sqlite3、knowledge、artifacts、audio。
 知识文档需人工放进 knowledge，程序不会默认读取整个项目或用户磁盘。
 本次在 knowledge 放入项目 SIM7600 使用说明用于合成任务测试。
-新工作台目前只展示模型配置，不提供在线编辑密钥或切换模型；改环境变量后重启。
+新工作台可在“大模型配置”页保存服务地址、模型、密钥和请求超时；已有保存配置优先于环境变量。详见 [工作台设备与模型配置](workbench-settings.md)。
 
 ### Docker 业务服务
 

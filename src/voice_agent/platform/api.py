@@ -1,19 +1,24 @@
 import asyncio
 import json
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..diagnostics import DiagnosticQuery
 from ..speech import LocalSpeech
 from .engine import Engine
 from .model import KimiAgentModel
 from .phone import PhoneController
+from .settings import ModelSettings
 from .state import Store
 from .tools import Tools
 
@@ -44,7 +49,7 @@ def create_app(root=None, model=None, tools=None, speech=None):
     root = Path(root or os.getenv("AGENT_DATA_DIR", "local-data/agent"))
     store = Store(root / "tasks.sqlite3")
     store.recover()
-    model = model or KimiAgentModel()
+    model = model or KimiAgentModel(root / "model-settings.json")
     tools = tools or Tools(root)
     engine = Engine(store, model, tools)
     speech = speech or LocalSpeech(
@@ -95,6 +100,106 @@ def create_app(root=None, model=None, tools=None, speech=None):
         )
         return response
 
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, exc):
+        # Pydantic model-level errors can otherwise echo the entire password form.
+        return JSONResponse(
+            {"detail": "请求参数无效，请检查服务地址、模型和密钥格式"}, status_code=422
+        )
+
+    config_test = asyncio.Lock()
+
+    def configurable():
+        if not isinstance(model, KimiAgentModel):
+            raise HTTPException(409, "当前注入的模型不支持在线配置")
+
+    def idle():
+        if any(not job.done() for job in engine.jobs.values()) or (
+            phone.job and not phone.job.done()
+        ):
+            raise HTTPException(409, "请先暂停运行中的任务并结束电话，再配置或测试模型")
+        if config_test.locked():
+            raise HTTPException(409, "模型连接测试正在进行")
+
+    @app.get("/api/settings/model")
+    async def model_settings():
+        configurable()
+        return model.public_settings()
+
+    @app.post("/api/settings/model")
+    async def save_model(body: ModelSettings):
+        configurable()
+        idle()
+        try:
+            return model.configure(body)
+        except (ValueError, OSError):
+            raise HTTPException(422, "配置保存失败，请检查配置和数据目录权限") from None
+
+    @app.post("/api/settings/model/test")
+    async def test_model():
+        configurable()
+        idle()
+        async with config_test:
+            start = time.perf_counter()
+            try:
+                result = await model.decide(
+                    {
+                        "goal": "请用 speak 简短回复连接测试成功，不调用工具",
+                        "plan": [],
+                        "messages": [],
+                        "allowed_numbers": [],
+                    },
+                    [],
+                )
+                return {
+                    "ok": True,
+                    "model": model.model,
+                    "action": result.action,
+                    "duration_ms": round((time.perf_counter() - start) * 1000),
+                    "message": "连接与动作格式校验通过；没有执行任何工具",
+                }
+            except Exception:
+                raise HTTPException(
+                    502, "模型测试失败：请检查服务地址、模型、密钥及 JSON 动作兼容性"
+                ) from None
+
+    async def hardware(path, body=None):
+        key_path = Path(os.getenv("HARDWARE_KEY_FILE", "local-data/hardware-api-key.txt"))
+        if not key_path.is_file():
+            raise HTTPException(503, "硬件服务未配置，请先运行 scripts/start-hardware.ps1")
+        try:
+            async with httpx.AsyncClient(
+                timeout=20,
+                trust_env=False,
+                headers={"Authorization": "Bearer " + key_path.read_text(encoding="utf-8").strip()},
+            ) as client:
+                base = os.getenv("HARDWARE_URL", "http://127.0.0.1:8767").rstrip("/")
+                response = await (
+                    client.get(base + path) if body is None else client.post(base + path, json=body)
+                )
+            if not response.is_success:
+                message = {
+                    401: "硬件服务密钥不匹配",
+                    409: "电话占用中，请结束通话后诊断",
+                    404: "硬件服务版本过旧，请更新并重启",
+                }.get(response.status_code, "设备不可用，请检查 USB、串口占用及驱动")
+                raise HTTPException(503, message)
+            return response.json()
+        except (httpx.HTTPError, OSError, ValueError):
+            raise HTTPException(503, "无法连接硬件服务，请检查 8767 服务是否启动") from None
+
+    @app.get("/api/hardware/status")
+    async def hardware_status():
+        return await hardware("/status")
+
+    @app.get("/api/hardware/ports")
+    async def hardware_ports():
+        return await hardware("/debug/ports")
+
+    @app.post("/api/hardware/query")
+    async def hardware_query(body: DiagnosticQuery):
+        return await hardware("/debug/query", body.model_dump())
+
     def get(task_id):
         try:
             return store.get(task_id)
@@ -105,9 +210,13 @@ def create_app(root=None, model=None, tools=None, speech=None):
     async def health():
         return {
             "model": getattr(model, "model", "test"),
-            "thinking": "disabled",
+            "thinking": "disabled"
+            if getattr(model, "provider", "kimi") == "kimi"
+            else "server-default",
             "endpoint": getattr(model, "base_url", "test"),
-            "configured": bool(model.key()) if hasattr(model, "key") else True,
+            "configured": (bool(model.key()) or model.provider == "openai-compatible")
+            if isinstance(model, KimiAgentModel)
+            else True,
             "speech": speech.availability(),
             "tools": tools.catalog(),
         }

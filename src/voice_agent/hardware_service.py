@@ -13,8 +13,9 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from .diagnostics import QUERIES, DiagnosticQuery
 from .pcm_bridge import PCMBridge
-from .sim7600 import ATTransport, Sim7600
+from .sim7600 import ATTransport, Sim7600, discover_ports
 
 
 class Operation(BaseModel):
@@ -123,6 +124,29 @@ def create_app(root="local-data", modem_factory=None):
                 raise HTTPException(
                     503, "设备不可用，检查串口占用及连接；必要时重启硬件服务"
                 ) from None
+
+    @app.get("/debug/ports")
+    async def ports():
+        try:
+            return {
+                "ports": await asyncio.to_thread(discover_ports),
+                "at_port": os.getenv("SIM7600_AT_PORT", "自动识别"),
+                "audio_port": os.getenv("SIM7600_AUDIO_PORT", "自动识别"),
+            }
+        except Exception:
+            raise HTTPException(503, "端口枚举失败，请检查 pyserial 与 USB 驱动") from None
+
+    @app.post("/debug/query")
+    async def query(body: DiagnosticQuery):
+        async with gate:
+            if bridge or journal["owner"]:
+                raise HTTPException(409, "电话占用中，请在通话结束后运行诊断")
+            try:
+                command, prefixes = QUERIES[body.query]
+                result = await asyncio.to_thread(connect().at.command, command, prefixes=prefixes)
+                return {"command": command, "lines": result.lines, "result": result.result}
+            except Exception:
+                raise HTTPException(503, "诊断失败，检查 USB、串口占用或重启硬件服务") from None
 
     @app.post("/{action}")
     async def operate(action: str, body: Operation):
