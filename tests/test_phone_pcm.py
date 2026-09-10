@@ -3,11 +3,9 @@ import base64
 import queue
 import time
 
-import numpy as np
 import pytest
 
 from voice_agent.pcm_bridge import PCMBridge
-from voice_agent.platform.phone import Endpoint, PhoneController, downsample, pcm_wav
 from voice_agent.platform.state import Store
 
 
@@ -65,6 +63,10 @@ def test_pcm_fragmentation_pacing_and_interrupt():
 
 
 def test_endpoint_silence_onset_and_end():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from voice_agent.platform.phone import Endpoint
+
     endpoint = Endpoint()
     silence = bytes(320)
     voiced = np.full(160, 1000, dtype="<i2").tobytes()
@@ -81,6 +83,10 @@ def test_endpoint_silence_onset_and_end():
 
 
 def test_tts_conversion_preserves_duration():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from voice_agent.platform.phone import downsample, pcm_wav
+
     samples = (np.sin(np.arange(22050) * 2 * np.pi * 440 / 22050) * 10000).astype("<i2")
     pcm = downsample(pcm_wav(samples.tobytes(), 22050))
     assert len(pcm) == 16000
@@ -88,6 +94,7 @@ def test_tts_conversion_preserves_duration():
 
 
 def test_audio_routes_enforce_owner_and_generation(tmp_path, monkeypatch):
+    pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
     from voice_agent import hardware_service
@@ -125,6 +132,10 @@ def test_audio_routes_enforce_owner_and_generation(tmp_path, monkeypatch):
 
 
 def test_stop_during_prewarm_never_dials(tmp_path):
+    pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from voice_agent.platform.phone import PhoneController, pcm_wav
+
     class Speech:
         def synthesize(self, text):
             return pcm_wav(bytes(3200))

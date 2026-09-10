@@ -14,6 +14,7 @@
 | 工具 | 文档列表/读取、笔记保存、电话状态/拨号/接听/挂断 |
 | 硬件 | Windows 原生 8767，Bearer 鉴权、任务拥有权、操作日志与执行 ID 去重 |
 | 语音 | CPU SenseVoice + Matcha/Vocos，按键录音或上传短 WAV，转写确认后提交、回复分段合成播放 |
+| 实时电话 | 独立电话会话控制器，双向 PCM 帧、能量分句、ASR/LLM/TTS 轮次、打断及挂断 |
 | LLM | Kimi Coding `/coding/v1/chat/completions`，`kimi-k2.6`，`thinking: {type: disabled}` |
 
 模型实现 `async decide(task, tools) -> Action`。执行器与具体 API 分离；旧 Provider
@@ -85,7 +86,8 @@ docker compose -f compose.agent.yml up -d --build
   路径越界、参数校验、Kimi 参数与截断、步数上限、硬件鉴权/所有权/执行 ID 去重。
 - 前端通过 TypeScript 和 Vite 构建，并在真实浏览器检查任务详情、计划、结果和下载链接。
 - 合成音频经新工作台 HTTP 转写 → Kimi 回复 → TTS WAV 回环通过；仅验证音频/API 链路。
-- 106 项 Python 测试与 Ruff 通过；原生工作台停止/重启后 4 条测试任务仍在。
+- 首版 106 项 Python 测试通过；新增电话链路测试后共 111 项通过，Ruff 通过。
+  原生工作台停止/重启后原有 4 条测试任务仍在。
 
 当前是可运行的通用任务/语音工作台基础版，并非全部规划已经完成：
 

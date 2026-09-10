@@ -68,6 +68,9 @@ def test_provider_selection_and_secret_file(monkeypatch, tmp_path):
 
 
 def test_health_and_console_use_configured_remote(monkeypatch, tmp_path):
+    pytest.importorskip("fastapi")
+    pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
     from fastapi.testclient import TestClient
 
     from voice_agent.console import create_app

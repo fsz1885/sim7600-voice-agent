@@ -1,10 +1,22 @@
 # sim7600-voice-agent
 
-目标驱动的 AI 电话助手：**Agent Core + 文本模拟器 + 可选本地语音控制台**。
-本地控制台支持 Ollama、中文 ASR/TTS、麦克风连续语音、自动停顿检测、说话打断和信息溯源。
-当前不包含 SIM7600 硬件适配、真实拨号、SIP 或电话级回声消除。
+目标驱动的 AI 电话助手：**通用自主 Agent 工作台 + SIM7600 双向语音 + 结构化询问 Core**。
+已实现真实拨号与 PCM → 中文 ASR → Kimi → TTS → 电话回传，并完成一次三轮真实通话。
+当前没有 SIP 或电话级软件回声消除；ASR/LLM/TTS 仍按轮次处理，尚非端到端流式语音。
 
-## Windows + RTX 4060 本地运行
+## 选择运行入口
+
+| 入口 | 用途 | 部署说明 |
+| --- | --- | --- |
+| 8766 通用工作台 | 自主任务、工具、实时电话；默认 Kimi Coding kimi-k2.6 非思考 | [运行指南](docs/autonomous-agent.md) |
+| 8767 原生硬件服务 | 独占 SIM7600 AT/Audio 串口，供工作台调用 | [硬件 SDK 与 CLI](docs/sim7600.md) |
+| 8765 原询问控制台 | 结构化字段采集、浏览器连续语音，可用本机或内网 LLM | [本地部署](docs/local-deployment.md)、[内网部署](docs/lan-deployment.md) |
+| CLI / 基础 Docker | 离线模拟、Core 开发和测试 | 下文快速开始 |
+
+当前真实电话使用 Windows 原生部署；工作台 Docker 方案尚未本机验收。
+电话测试结果与响应时间见 [电话评估](docs/phone-evaluation.md)。
+
+## 原询问控制台：Windows + RTX 4060 本地运行
 
 完整安装、启动、使用与限制见 [本地部署指南](docs/local-deployment.md)。
 基础 Docker / CLI 仍不需要语音依赖；控制台使用独立的 `requirements-local.lock`。
@@ -106,10 +118,10 @@ python -m voice_agent.benchmark examples/company-registration.json --output resu
 不是首 token 延迟，也不是 ASR/TTS 或完整电话链路耗时。单次会话的 P95 仅为小样本描述。
 实际评测记录、延迟统计及未解决的行为问题见 [Kimi 实测报告](docs/kimi-evaluation.md)。
 
-## 架构与状态
+## 结构化询问 Core 的架构与状态
 
 ```text
-CLI / 自动化测试 / 未来 ASR
+CLI / 自动化测试 / 控制台 ASR
              │ 文本
              ▼
         Agent.handle_turn
@@ -124,7 +136,7 @@ CLI / 自动化测试 / 未来 ASR
   Core 校验 → 原子提交字段 → 检查完成 / 停滞 → Decision
              │ 文本与结构化结果
              ▼
-       CLI / 未来 TTS
+       CLI / 控制台 TTS
 ```
 
 技术选择：Python 3.11+ 便于测试和后续语音生态对接；Pydantic 负责结构验证和 JSON Schema；
@@ -243,8 +255,9 @@ CI 自动执行 Python 3.11 / 3.12 / 3.13 的测试、lint、离线示例，以�
 
 评估报告：[Kimi 实测](docs/kimi-evaluation.md)、[模型候选](docs/model-candidates.md)、
 [单卡 4060 选型与本地 ASR/TTS 实测](docs/speech-evaluation/README.md)。
-语音评估提供独立的 CPU 脚本与原始结果；本地控制台提供 VAD 自动切句 → ASR → Core → TTS 链路，
-仍未接入实时电话硬件。历史评估报告描述当时的版本与机器环境。
+语音评估提供独立的 CPU 脚本与原始结果；原询问控制台提供 VAD 自动切句 → ASR → Core → TTS 链路。
+通用工作台已接入 SIM7600 实时电话，实测见 [电话评估](docs/phone-evaluation.md)。
+历史评估报告描述当时的版本与机器环境。
 
 已实现独立状态、可替换 Provider、每轮结构化决策、自然结束、结果证据、离线交互及完整演示、
 Docker、固定依赖、MIT License 和基础 CI。
@@ -253,8 +266,10 @@ Docker、固定依赖、MIT License 和基础 CI。
 测量完成率、重复询问率和延迟。控制台 ASR 把最终转写传给 `user_text`，
 TTS 消费 `decision.response`，电话适配层根据 finish / handoff 管理通话；
 SIM7600 仅属于电话适配层，不进入 Agent Core。已有[独立硬件 API 与 CLI](docs/sim7600.md)，
-支持端口发现、通话控制及 PCM 音频测试；尚未接入浏览器连续语音或 LLM。
-# 内网模型部署
+支持端口发现、通话控制及 PCM 音频测试；工作台通过独立电话会话控制器接入 ASR/LLM/TTS。
+后续重点是模型尾延迟、首段合成、分句与打断质量，以及真实电话评测集。
+
+## 内网模型部署
 
 使用另一台机器上的 llama.cpp，同时在本机运行语音控制台，见
 [内网部署与 Provider 切换](docs/lan-deployment.md)。

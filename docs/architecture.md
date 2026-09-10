@@ -1,5 +1,8 @@
 # 架构与行为约定
 
+本文描述结构化询问 Core，服务 CLI 和原 8765 控制台。
+通用任务工作台与实时电话会话的架构见 [自主 Agent](autonomous-agent.md) 和 [电话评估](phone-evaluation.md)。
+
 ## 职责边界
 
 `Task` 定义目标和必要字段，`State` 保存独立结构化状态及原始对话。
