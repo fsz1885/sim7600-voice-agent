@@ -159,3 +159,63 @@ def test_workbench_hardware_missing_config_is_actionable(tmp_path, monkeypatch):
         assert client.get("/api/hardware/status").status_code == 503
         assert "start-hardware.ps1" in client.get("/api/hardware/ports").text
         assert client.post("/api/hardware/query", json={"query": "dial"}).status_code == 422
+
+
+@pytest.mark.parametrize("route", ["status", "query"])
+def test_idle_read_reconnects_after_usb_port_changes(tmp_path, monkeypatch, route):
+    from voice_agent.sim7600 import ModemError
+
+    connections = []
+
+    class Transport:
+        def __init__(self, port):
+            self.closed = False
+            self.fail = False
+            connections.append(self)
+
+        def close(self):
+            self.closed = True
+
+        def command(self, command, **kw):
+            if self.fail:
+                raise ModemError("USB disconnected")
+            lines = {"AT+CPIN?": ("+CPIN: READY",), "AT+CEREG?": ("+CEREG: 0,1",)}
+            return ATResponse(command, lines.get(command, ()), "OK")
+
+    monkeypatch.setattr("voice_agent.hardware_service.ATTransport", Transport)
+    app = hardware_app(tmp_path)
+    key = (tmp_path / "hardware-api-key.txt").read_text()
+    with TestClient(app, headers={"Authorization": "Bearer " + key}) as client:
+        assert client.get("/status").status_code == 200
+        connections[0].fail = True
+        response = (
+            client.get("/status")
+            if route == "status"
+            else client.post("/debug/query", json={"query": "ping"})
+        )
+        assert response.status_code == 200
+        assert len(connections) == 2
+        assert connections[0].closed
+        assert not connections[1].closed
+
+
+def test_owned_status_failure_does_not_reconnect_or_clear_owner(tmp_path):
+    owner = "a" * 32
+    (tmp_path / "hardware-state.json").write_text(json.dumps({"owner": owner, "operations": {}}))
+    created = []
+
+    class Broken:
+        def health(self):
+            raise RuntimeError("disconnected")
+
+    def factory():
+        created.append(1)
+        return Broken()
+
+    app = hardware_app(tmp_path, modem_factory=factory)
+    key = (tmp_path / "hardware-api-key.txt").read_text()
+    with TestClient(app, headers={"Authorization": "Bearer " + key}) as client:
+        assert client.get("/status").status_code == 503
+        assert client.get("/status").status_code == 503
+        assert len(created) == 1
+        assert json.loads((tmp_path / "hardware-state.json").read_text())["owner"] == owner
