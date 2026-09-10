@@ -50,3 +50,11 @@ scripts/start-hardware.ps1
 SIM7600 拔插或重新枚举后 COM 号可能变化。空闲且无电话归属时，只读状态和诊断查询失败会释放旧串口、重新枚举并重试一次；仍失败时返回错误。通话占用时不自动重连，不重放拨号/接听等操作。若显式设置 SIM7600_AT_PORT，则仍尊重该配置，端口变更后需要更新配置。
 
 本机本次 AT 从 COM5 变成 COM10、Audio 从 COM3 变成 COM8，旧服务缓存连接导致持续 503。部署修复并重启后状态/AT 查询均返回 200；网络仍报告未注册和 NO SERVICE。自动重连通过模拟断开的回归测试验证，没有要求用户再次拔插设备。
+
+## 网络排查暂存（2026-09-11）
+
+本轮硬件排查按用户要求暂停，尚未解决入网问题。最后读取到 SIM READY、CFUN=1、COPS=0、CNMP=2，CREG/CGREG 为 0,2，CEREG 为 0,4，CSQ 为 99,99，CPSI 为 NO SERVICE。串口查询已恢复，不能将此状态误记为网络已修复。用户反馈同一张 SIM 在手机上可用 4G；模块侧天线通路、供电及射频状态仍未完成对照验证。
+
+NET 常亮与搜网状态一致；官方 AT 手册未找到直接判定 MAIN 天线接通/断路的查询命令。CSQ/CPSI 只能提供信号与网络信息，不能单独证明天线损坏。本轮未修改频段、APN 或固件，也未发起电话。后续继续时应先复查设备实时状态，不沿用本次读数。
+
+参考：[Waveshare M.2 HAT 文档](https://www.waveshare.net/wiki/SIM7600G-H-M2_4G_HAT)、[SIMCom AT 手册](https://files.waveshare.com/wiki/SIM7600G-H/SIM7500_SIM7600_Series_AT_Command_Manual_V3.00.pdf)。
