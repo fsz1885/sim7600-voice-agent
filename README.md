@@ -258,3 +258,9 @@ SIM7600 仅属于电话适配层，不进入 Agent Core。已有[独立硬件 AP
 
 使用另一台机器上的 llama.cpp，同时在本机运行语音控制台，见
 [内网部署与 Provider 切换](docs/lan-deployment.md)。
+
+## 通用自主语音 Agent 工作台
+
+新工作台使用任务执行循环、工具授权、SQLite 持久化和 React 前端，默认 Kimi Coding
+端点的 kimi-k2.6 非思考模式。运行入口及实测限制见
+[自主 Agent 第一版](docs/autonomous-agent.md)，默认端口 8766。

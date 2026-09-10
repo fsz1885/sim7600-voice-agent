@@ -17,3 +17,5 @@ docs/speech-evaluation/.venv
 
 node_modules/
 src/voice_agent/static/vendor/
+**/node_modules
+frontend/dist

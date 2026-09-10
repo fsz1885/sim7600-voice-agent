@@ -1,0 +1,34 @@
+name: sim7600-agent
+services:
+  workbench:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: sim7600-workbench
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8766:8766"
+    environment:
+      AGENT_DATA_DIR: /data
+      AGENT_KIMI_BASE_URL: https://api.kimi.com/coding/v1
+      AGENT_KIMI_MODEL: kimi-k2.6
+      AGENT_KIMI_KEY_FILE: /run/secrets/kimi_key
+      HARDWARE_URL: http://host.docker.internal:8767
+      HARDWARE_KEY_FILE: /run/secrets/hardware_key
+      VOICE_MODELS_DIR: /models
+    volumes:
+      - ./local-data/agent:/data
+      - ./docs/speech-evaluation/models:/models:ro
+    secrets:
+      - kimi_key
+      - hardware_key
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8766/api/health',timeout=5)"]
+      interval: 20s
+      timeout: 8s
+      retries: 3
+secrets:
+  kimi_key:
+    file: ./local-data/kimi-agent-key.txt
+  hardware_key:
+    file: ./local-data/hardware-api-key.txt

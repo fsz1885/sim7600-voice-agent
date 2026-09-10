@@ -5,6 +5,17 @@ on:
 permissions:
   contents: read
 jobs:
+  workbench-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
   local-console:
     runs-on: windows-latest
     steps:

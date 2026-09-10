@@ -17,3 +17,4 @@ runtime/
 
 node_modules/
 src/voice_agent/static/vendor/
+frontend/dist/

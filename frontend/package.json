@@ -1,0 +1,1 @@
+{"name":"voice-agent-workbench","version":"0.1.0","private":true,"type":"module","scripts":{"build":"tsc --noEmit && vite build","dev":"vite --host 127.0.0.1"},"dependencies":{"@types/react":"19.3.0","@types/react-dom":"19.3.0","react":"19.3.0","react-dom":"19.3.0","typescript":"7.0.2","vite":"8.2.2"}}

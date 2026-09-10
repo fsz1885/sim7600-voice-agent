@@ -18,6 +18,8 @@ local = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "numpy>=2,<3", "scipy>=1.15,<2
 voice-agent = "voice_agent.cli:main"
 voice-console = "voice_agent.console:main"
 sim7600 = "voice_agent.sim7600_cli:main"
+sim7600-service = "voice_agent.hardware_service:main"
+voice-workbench = "voice_agent.platform.api:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/voice_agent"]
