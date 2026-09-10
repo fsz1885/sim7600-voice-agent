@@ -4,6 +4,8 @@ services:
     image: ollama/ollama:0.33.3
     container_name: sim7600-ollama
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
     environment:
       OLLAMA_NO_CLOUD: "1"
       OLLAMA_NUM_PARALLEL: "1"

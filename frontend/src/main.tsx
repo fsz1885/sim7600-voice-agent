@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './style.css';
+import {ModelSettings, HardwareSettings} from './settings';
 
 type Task = {id:string;goal:string;status:string;steps:number;plan:string[];result:string;
   pending:null|{action:{tool:string;arguments:Record<string,unknown>}};
@@ -92,9 +93,11 @@ function App(){
   return <div className="shell"><aside className="nav"><div className="brand"><span className="logo">声</span><div>声程<small>自主语音工作台</small></div></div>
     <button className={page==='tasks'?'navItem active':'navItem'} onClick={()=>setPage('tasks')}>◈　任务工作台</button>
     <button className={page==='tools'?'navItem active':'navItem'} onClick={()=>setPage('tools')}>⚙　工具与模型</button>
+    <button className={page==='hardware'?'navItem active':'navItem'} onClick={()=>setPage('hardware')}>◉　SIM7600 调试</button>
+    <button className={page==='model'?'navItem active':'navItem'} onClick={()=>setPage('model')}>⚙　大模型配置</button>
     <div className="navHeading">最近任务 <span>{tasks.length}</span></div><div className="taskList">{tasks.map(t=><button key={t.id} className={'taskLink '+(t.id===task?.id?'chosen':'')} onClick={()=>attempt(()=>choose(t.id))}><b>{t.goal}</b><small>{labels[t.status]}</small></button>)}</div>
     <div className="navFoot"><i/>本机工作台 · 任务持久保存<small>电话工具与浏览器语音独立运行</small></div></aside>
-    <main><header><div><small>WORKSPACE / VOICE AGENT</small><h1>{page==='tools'?'工具与模型':'让目标开始行动'}</h1></div><button onClick={()=>{interrupt();selected.current=null;setTask(null);setPage('tasks');}}>＋ 新建任务</button></header>
+    <main><header><div><small>WORKSPACE / VOICE AGENT</small><h1>{page==='model'?'大模型配置':page==='hardware'?'SIM7600 调试':page==='tools'?'工具与模型':'让目标开始行动'}</h1></div><button onClick={()=>{interrupt();selected.current=null;setTask(null);setPage('tasks');}}>＋ 新建任务</button></header>
     {error&&<div className="error" role="alert">{error}<button onClick={()=>setError('')}>关闭</button></div>}
     <details className="panel"><summary>SIM7600 实时电话 · {({idle:'待机',preparing:'模型预热',dialing:'拨号中',active:'通话中',ended:'已结束',stopped:'已停止',error:'失败'} as Record<string,string>)[phone.status]}</summary>
       <p>接听后自动进行语音对话，最长 120 秒。测试音频保存在本机；说“停止测试”可结束。</p>
@@ -106,7 +109,7 @@ function App(){
       <p>接收 {phone.received_bytes||0} 字节 · 发送 {phone.sent_bytes||0} 字节 · 已识别 {phone.turns||0} 轮 {phone.error||''}</p>
       {phone.task_id&&<button onClick={()=>attempt(()=>choose(phone.task_id!))}>查看电话转写与事件</button>}
     </details>
-    {page==='tools'?<section className="settings"><div className="panel"><h2>当前模型</h2><strong>{health?.model}</strong><p>非思考模式 · {health?.configured?'密钥已配置（不代表请求一定成功）':'缺少密钥'}</p><code>{health?.endpoint}</code><p>ASR {health?.speech.asr?'就绪':'未安装'} · TTS {health?.speech.tts?'就绪':'未安装'}</p><button onClick={()=>attempt(async()=>setHealth(await api('/health')))}>刷新状态</button></div><div className="toolGrid">{health?.tools.map(t=><div className="panel" key={t.name}><small>{t.requires_authorization?'按任务授权':'已注册能力'}</small><h3>{t.name}</h3><p>{t.description}</p></div>)}</div></section>:
+    {page==='model'?<ModelSettings api={api} onSaved={()=>api('/health').then(setHealth).catch(e=>setError(String(e)))}/>:page==='hardware'?<HardwareSettings api={api}/>:page==='tools'?<section className="settings"><div className="panel"><h2>当前模型</h2><strong>{health?.model}</strong><p>{health?.thinking==='disabled'?'非思考模式':'由服务端决定思考模式'} · {health?.configured?'模型已配置（请测试连接）':'缺少配置'}</p><code>{health?.endpoint}</code><p>ASR {health?.speech.asr?'就绪':'未安装'} · TTS {health?.speech.tts?'就绪':'未安装'}</p><button onClick={()=>attempt(async()=>setHealth(await api('/health')))}>刷新状态</button></div><div className="toolGrid">{health?.tools.map(t=><div className="panel" key={t.name}><small>{t.requires_authorization?'按任务授权':'已注册能力'}</small><h3>{t.name}</h3><p>{t.description}</p></div>)}</div></section>:
     !task?<section className="start"><div className="eyebrow">从一个目标开始</div><h2>说出你想完成的事。</h2><p>助手会选择可用工具、记录执行过程，并在需要时向你提问。</p>
       <div className="composer"><textarea aria-label="任务目标" placeholder="例如：阅读现有知识文档，整理设备接入的注意事项并保存为笔记。" value={goal} onChange={e=>setGoal(e.target.value)}/><div className="composeFoot"><button className={recording?'recording':''} onClick={()=>attempt(record)}>{recording?'■ 结束录音':'● 语音输入'}</button><button onClick={()=>upload.current?.click()}>上传 WAV</button><button className="primary" disabled={busy||!goal.trim()} onClick={()=>attempt(async()=>{const t=await api('/tasks',{goal,allowed_numbers:numbers.split(/[,，\s]+/).filter(Boolean)});selected.current=t.id;setTask(t);await refresh();})}>开始执行 →</button></div></div>
       <details><summary>本任务的电话授权范围</summary><p>填写后即授权此任务拨打这些号码；留空时，拨号动作需单独确认。</p><input placeholder="号码以逗号分隔" value={numbers} onChange={e=>setNumbers(e.target.value)}/></details>
@@ -117,7 +120,7 @@ function App(){
       {task.pending&&<div className="approval"><b>待确认操作：{task.pending.action.tool}</b><pre>{JSON.stringify(task.pending.action.arguments,null,2)}</pre><button disabled={busy} onClick={()=>attempt(async()=>setTask(await api(`/tasks/${task.id}/approval`,{approve:true})))}>允许这次操作</button><button disabled={busy} onClick={()=>attempt(async()=>setTask(await api(`/tasks/${task.id}/approval`,{approve:false})))}>拒绝</button></div>}
       <div className="reply"><textarea aria-label="补充消息" value={text} onChange={e=>setText(e.target.value)} placeholder="补充信息；运行中请先暂停任务"/><div><button onClick={()=>attempt(record)}>{recording?'■ 停止录音':'● 语音'}</button><button onClick={interrupt}>停止播放</button><button className="primary" disabled={busy||!text.trim()||!['paused','waiting_user'].includes(task.status)} onClick={()=>attempt(async()=>{setTask(await api(`/tasks/${task.id}/message`,{text}));setText('');})}>发送</button></div></div></div>
       <aside className="panel evidence"><h3>操作与结果</h3>{task.executions.map(e=><div className="execution" key={e.id}><b>{e.tool}</b><small>{e.status}</small>{e.result?.artifact&&<a href={'/api/artifacts/'+e.result.artifact}>下载笔记 ↗</a>}{e.result?.message&&<p>{e.result.message}</p>}</div>)}<h3>事件记录</h3>{events.slice(-12).map(e=><div className="event" key={e.id}><small>{new Date(e.time*1000).toLocaleTimeString()}</small><span>{e.type}</span>{e.payload.message&&<p>{e.payload.message}</p>}</div>)}</aside></div></section>}
-    <footer><span>{voiceStatus||'语音输入由本机识别；提交后的文字与工具结果发送至 Kimi。'}</span><label><input type="checkbox" checked={autoSpeak} onChange={e=>setAutoSpeak(e.target.checked)}/> 自动播报回复</label></footer>
+    <footer><span>{voiceStatus||'语音输入由本机识别；提交后的文字与工具结果发送至当前配置的模型。'}</span><label><input type="checkbox" checked={autoSpeak} onChange={e=>setAutoSpeak(e.target.checked)}/> 自动播报回复</label></footer>
     <input ref={upload} type="file" accept=".wav" hidden onChange={e=>{const f=e.target.files?.[0];if(f)attempt(()=>transcribe(f));e.target.value='';}}/>
     </main></div>;
 }

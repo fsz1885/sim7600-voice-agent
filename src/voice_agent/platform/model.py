@@ -21,7 +21,10 @@ speak 会回复用户并等待下一条消息。complete 仅在目标已满足�
 
 
 class KimiAgentModel:
-    def __init__(self):
+    def __init__(self, settings_path=None):
+        self.settings_path = Path(settings_path) if settings_path else None
+        self.saved = None
+        self.provider = "kimi"
         self.model = os.getenv("AGENT_KIMI_MODEL", "kimi-k2.6")
         self.base_url = os.getenv("AGENT_KIMI_BASE_URL", "https://api.kimi.com/coding/v1").rstrip(
             "/"
@@ -33,13 +36,54 @@ class KimiAgentModel:
         }:
             raise ValueError("Agent requires an official Kimi API endpoint")
 
+        if self.settings_path and self.settings_path.exists():
+            from .settings import ModelSettings
+
+            self.apply(
+                ModelSettings.model_validate_json(self.settings_path.read_text(encoding="utf-8"))
+            )
+
+    def apply(self, settings):
+        self.saved = settings
+        self.model, self.base_url, self.provider = (
+            settings.model,
+            settings.base_url,
+            settings.provider,
+        )
+
+    def public_settings(self):
+        return {
+            "provider": self.provider,
+            "base_url": self.base_url,
+            "model": self.model,
+            "has_key": bool(self.key()),
+            "timeout_seconds": self.saved.timeout_seconds if self.saved else 60,
+        }
+
+    def configure(self, settings):
+        from .settings import write_settings
+
+        # Empty password keeps the old key only for the exact same service.
+        same = settings.base_url == self.base_url and settings.provider == self.provider
+        key = settings.api_key.get_secret_value()
+        if not key and not settings.clear_key and same:
+            key = self.key()
+        settings = settings.model_copy(
+            update={"api_key": type(settings.api_key)(key), "clear_key": False}
+        )
+        write_settings(self.settings_path, settings)
+        self.apply(settings)
+        return self.public_settings()
+
     def key(self):
+        if self.saved is not None:
+            return self.saved.api_key.get_secret_value()
         path = os.getenv("AGENT_KIMI_KEY_FILE", "local-data/kimi-agent-key.txt")
         return Path(path).read_text(encoding="utf-8-sig").strip() if Path(path).is_file() else ""
 
     async def decide(self, task, tools):
         key = self.key()
-        if not key:
+        if not key and self.provider == "kimi":
             raise ProviderError("缺少 Kimi API key：请配置 AGENT_KIMI_KEY_FILE")
         context = json.dumps(
             {
@@ -53,6 +97,7 @@ class KimiAgentModel:
         )
         if len(context) > 90000:
             raise ProviderError("任务上下文达到当前上限，请拆分任务；历史未被静默删除")
+        endpoint, provider = self.base_url, self.provider
         payload = {
             "model": self.model,
             "thinking": {"type": "disabled"},
@@ -68,18 +113,21 @@ class KimiAgentModel:
                 {"role": "user", "content": context},
             ],
         }
+        if provider != "kimi":
+            payload.pop("thinking")
         try:
-            async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+            timeout = self.saved.timeout_seconds if self.saved else 60
+            async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:
                 response = await client.post(
-                    self.base_url + "/chat/completions",
+                    endpoint + "/chat/completions",
                     json=payload,
-                    headers={"Authorization": "Bearer " + key},
+                    headers={"Authorization": "Bearer " + key} if key else {},
                 )
                 if not response.is_success:
-                    raise ProviderError(f"Kimi HTTP {response.status_code}")
+                    raise ProviderError(f"模型服务 HTTP {response.status_code}")
                 choice = response.json()["choices"][0]
                 if choice["finish_reason"] != "stop":
-                    raise ProviderError("Kimi 输出被截断，未执行动作")
+                    raise ProviderError("模型输出被截断，未执行动作")
                 return Action.model_validate_json(choice["message"]["content"])
         except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError) as exc:
-            raise ProviderError("Kimi 请求或动作格式无效，未执行动作") from exc
+            raise ProviderError("模型请求或动作格式无效，未执行动作") from exc
