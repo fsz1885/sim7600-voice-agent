@@ -20,7 +20,7 @@ docker compose -f compose.voice.yml logs --tail 50
 打开 `http://127.0.0.1:8765`。Docker Desktop 的 `sim7600-voice-agent` 项目下有
 `sim7600-console` 和 `sim7600-ollama` 两个常驻容器，重启 Docker 后会自动重启。
 默认的 `docker compose` 仍是原有 CLI 工具；启动网页必须指定 `-f compose.voice.yml`。
-Ollama 仅在容器网络内提供 API，网页端口只发布到宿主机回环地址。
+Ollama 同时发布到宿主机回环地址 127.0.0.1:11434，供原生工作台配置本地模型；网页端口也只发布到回环地址。
 不要同时运行原生控制台占用 8765，也不要同时在原生 Ollama 中加载模型占用显存。
 
 首次安装（没有模型文件）：
