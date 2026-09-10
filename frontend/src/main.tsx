@@ -18,6 +18,10 @@ async function api(path:string, body?:unknown) {
 }
 
 function App(){
+  const [phone,setPhone]=useState<{status:string;task_id?:string;turns?:number;sent_bytes?:number;received_bytes?:number;error?:string}>({status:'idle'});
+  const [phoneNumber,setPhoneNumber]=useState(''),[phoneGoal,setPhoneGoal]=useState('进行双向语音测试，确认对方能听清，然后简短回答问题。');
+  const phoneActive=['preparing','dialing','active'].includes(phone.status);
+  useEffect(()=>{const poll=()=>api('/phone').then(setPhone).catch(()=>{});poll();const timer=window.setInterval(poll,1000);return()=>window.clearInterval(timer);},[]);
   const [tasks,setTasks]=useState<Task[]>([]),[task,setTask]=useState<Task|null>(null),[health,setHealth]=useState<Health|null>(null);
   const [page,setPage]=useState('tasks'),[goal,setGoal]=useState(''),[numbers,setNumbers]=useState(''),[text,setText]=useState('');
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[events,setEvents]=useState<Event[]>([]);
@@ -92,6 +96,16 @@ function App(){
     <div className="navFoot"><i/>本机工作台 · 任务持久保存<small>电话工具与浏览器语音独立运行</small></div></aside>
     <main><header><div><small>WORKSPACE / VOICE AGENT</small><h1>{page==='tools'?'工具与模型':'让目标开始行动'}</h1></div><button onClick={()=>{interrupt();selected.current=null;setTask(null);setPage('tasks');}}>＋ 新建任务</button></header>
     {error&&<div className="error" role="alert">{error}<button onClick={()=>setError('')}>关闭</button></div>}
+    <details className="panel"><summary>SIM7600 实时电话 · {({idle:'待机',preparing:'模型预热',dialing:'拨号中',active:'通话中',ended:'已结束',stopped:'已停止',error:'失败'} as Record<string,string>)[phone.status]}</summary>
+      <p>接听后自动进行语音对话，最长 120 秒。测试音频保存在本机；说“停止测试”可结束。</p>
+      <input aria-label="测试电话号码" placeholder="输入授权拨打的号码" value={phoneNumber} onChange={e=>setPhoneNumber(e.target.value)} disabled={phoneActive}/>
+      <input aria-label="电话任务目标" value={phoneGoal} onChange={e=>setPhoneGoal(e.target.value)} disabled={phoneActive}/>
+      <button className="primary" disabled={busy||phoneActive||!phoneNumber.trim()||!phoneGoal.trim()} onClick={()=>attempt(async()=>{const t=await api('/phone/start',{number:phoneNumber.trim(),goal:phoneGoal,seconds:120});await choose(t.id);setPhone(await api('/phone'));await refresh();})}>拨打并开始语音对话</button>
+      <button disabled={!phoneActive} onClick={()=>attempt(async()=>setPhone(await api('/phone/stop',{})))}>挂断电话</button>
+      <button disabled={phone.status!=='active'} onClick={()=>attempt(async()=>{await api('/phone/interrupt',{});})}>打断播报</button>
+      <p>接收 {phone.received_bytes||0} 字节 · 发送 {phone.sent_bytes||0} 字节 · 已识别 {phone.turns||0} 轮 {phone.error||''}</p>
+      {phone.task_id&&<button onClick={()=>attempt(()=>choose(phone.task_id!))}>查看电话转写与事件</button>}
+    </details>
     {page==='tools'?<section className="settings"><div className="panel"><h2>当前模型</h2><strong>{health?.model}</strong><p>非思考模式 · {health?.configured?'密钥已配置（不代表请求一定成功）':'缺少密钥'}</p><code>{health?.endpoint}</code><p>ASR {health?.speech.asr?'就绪':'未安装'} · TTS {health?.speech.tts?'就绪':'未安装'}</p><button onClick={()=>attempt(async()=>setHealth(await api('/health')))}>刷新状态</button></div><div className="toolGrid">{health?.tools.map(t=><div className="panel" key={t.name}><small>{t.requires_authorization?'按任务授权':'已注册能力'}</small><h3>{t.name}</h3><p>{t.description}</p></div>)}</div></section>:
     !task?<section className="start"><div className="eyebrow">从一个目标开始</div><h2>说出你想完成的事。</h2><p>助手会选择可用工具、记录执行过程，并在需要时向你提问。</p>
       <div className="composer"><textarea aria-label="任务目标" placeholder="例如：阅读现有知识文档，整理设备接入的注意事项并保存为笔记。" value={goal} onChange={e=>setGoal(e.target.value)}/><div className="composeFoot"><button className={recording?'recording':''} onClick={()=>attempt(record)}>{recording?'■ 结束录音':'● 语音输入'}</button><button onClick={()=>upload.current?.click()}>上传 WAV</button><button className="primary" disabled={busy||!goal.trim()} onClick={()=>attempt(async()=>{const t=await api('/tasks',{goal,allowed_numbers:numbers.split(/[,，\s]+/).filter(Boolean)});selected.current=t.id;setTask(t);await refresh();})}>开始执行 →</button></div></div>

@@ -1,6 +1,7 @@
 """Native Windows SIM7600 control service; bearer authentication, task ownership."""
 
 import asyncio
+import base64
 import hmac
 import json
 import os
@@ -12,6 +13,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from .pcm_bridge import PCMBridge
 from .sim7600 import ATTransport, Sim7600
 
 
@@ -42,6 +44,31 @@ def create_app(root="local-data", modem_factory=None):
     transport = None
     modem = None
     gate = asyncio.Lock()
+    bridge = None
+
+    def close_audio():
+        nonlocal bridge
+        if bridge:
+            bridge.close()
+            bridge = None
+
+    async def watchdog():
+        while True:
+            await asyncio.sleep(2)
+            async with gate:
+                if bridge:
+                    try:
+                        calls = await asyncio.to_thread(connect().calls)
+                        expired = time.monotonic() - bridge.last_access > 15
+                        if not calls or expired or bridge.error:
+                            close_audio()
+                            await asyncio.to_thread(connect().usb_audio, False)
+                            if expired or calls:
+                                await asyncio.to_thread(connect().hangup)
+                            journal["owner"] = None
+                            save()
+                    except Exception:
+                        close_audio()
 
     def save():
         temp = journal_path.with_suffix(".tmp")
@@ -60,7 +87,14 @@ def create_app(root="local-data", modem_factory=None):
 
     @asynccontextmanager
     async def lifespan(app):
+        monitor = asyncio.create_task(watchdog())
         yield
+        monitor.cancel()
+        try:
+            await monitor
+        except asyncio.CancelledError:
+            pass
+        close_audio()
         if transport:
             transport.close()
 
@@ -121,6 +155,7 @@ def create_app(root="local-data", modem_factory=None):
                 elif action == "answer":
                     await asyncio.to_thread(device.answer)
                 else:
+                    close_audio()
                     await asyncio.to_thread(device.hangup)
                     await asyncio.to_thread(device.usb_audio, False)
                     journal["owner"] = None
@@ -136,6 +171,57 @@ def create_app(root="local-data", modem_factory=None):
                 operation["status"] = "unknown"
                 save()
                 raise HTTPException(503, "硬件操作失败或结果未知，请核对实际电话状态") from None
+
+    class AudioWrite(BaseModel):
+        owner: str = Field(pattern=r"^[a-f0-9]{32}$")
+        generation: int
+        pcm: str = Field(max_length=22000)
+
+    def owns(owner):
+        if journal["owner"] != owner:
+            raise HTTPException(409, "此任务未拥有电话")
+
+    @app.post("/audio/start")
+    async def audio_start(body: Operation):
+        nonlocal bridge
+        async with gate:
+            owns(body.owner)
+            if bridge is None:
+                new_bridge = PCMBridge(os.getenv("SIM7600_AUDIO_PORT"))
+                try:
+                    await asyncio.to_thread(connect().usb_audio, True)
+                except Exception:
+                    new_bridge.close()
+                    raise HTTPException(409, "需要已接通的语音电话") from None
+                bridge = new_bridge
+            return bridge.read(0)
+
+    @app.get("/audio/frames")
+    async def audio_frames(owner: str, after: int = 0):
+        owns(owner)
+        if bridge is None:
+            raise HTTPException(409, "音频已关闭")
+        return bridge.read(after)
+
+    @app.post("/audio/write")
+    async def audio_write(body: AudioWrite):
+        owns(body.owner)
+        if bridge is None:
+            raise HTTPException(409, "音频已关闭")
+        try:
+            bridge.write(base64.b64decode(body.pcm, validate=True), body.generation)
+        except BufferError:
+            raise HTTPException(429, "音频发送队列已满") from None
+        except ValueError:
+            raise HTTPException(409, "音频格式或播放代次无效") from None
+        return {"accepted": True}
+
+    @app.post("/audio/interrupt")
+    async def audio_interrupt(body: Operation):
+        owns(body.owner)
+        if bridge is None:
+            raise HTTPException(409, "音频已关闭")
+        return {"generation": bridge.interrupt()}
 
     return app
 

@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..speech import LocalSpeech
 from .engine import Engine
 from .model import KimiAgentModel
+from .phone import PhoneController
 from .state import Store
 from .tools import Tools
 
@@ -33,6 +34,12 @@ class Approval(BaseModel):
     approve: bool
 
 
+class PhoneStart(BaseModel):
+    number: str = Field(pattern=r"^\+?[0-9]{3,20}$")
+    goal: str = Field(min_length=1, max_length=2000)
+    seconds: int = Field(default=120, ge=15, le=180)
+
+
 def create_app(root=None, model=None, tools=None, speech=None):
     root = Path(root or os.getenv("AGENT_DATA_DIR", "local-data/agent"))
     store = Store(root / "tasks.sqlite3")
@@ -44,12 +51,22 @@ def create_app(root=None, model=None, tools=None, speech=None):
         Path(os.getenv("VOICE_MODELS_DIR", "docs/speech-evaluation/models"))
     )
     speech_gate = asyncio.Lock()
+    phone = PhoneController(
+        store,
+        model,
+        tools,
+        speech,
+        root,
+        os.getenv("HARDWARE_URL", "http://127.0.0.1:8767"),
+        os.getenv("HARDWARE_KEY_FILE", "local-data/hardware-api-key.txt"),
+    )
     audio_dir = root / "audio"
     audio_dir.mkdir(exist_ok=True)
 
     @asynccontextmanager
     async def lifespan(app):
         yield
+        await phone.stop()
         await engine.shutdown()
         store.close()
 
@@ -101,6 +118,29 @@ def create_app(root=None, model=None, tools=None, speech=None):
             {k: task[k] for k in ("id", "goal", "status", "updated_at", "steps")}
             for task in store.list()
         ]
+
+    @app.get("/api/phone")
+    async def phone_status():
+        return phone.live
+
+    @app.post("/api/phone/start")
+    async def phone_start(body: PhoneStart):
+        try:
+            return phone.start(body.number, body.goal, body.seconds)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
+
+    @app.post("/api/phone/stop")
+    async def phone_stop():
+        await phone.stop()
+        return phone.live
+
+    @app.post("/api/phone/interrupt")
+    async def phone_interrupt():
+        if not phone.job or phone.job.done():
+            raise HTTPException(409, "没有进行中的电话")
+        await phone.interrupt()
+        return phone.live
 
     @app.post("/api/tasks")
     async def create(body: CreateTask):
@@ -168,7 +208,13 @@ def create_app(root=None, model=None, tools=None, speech=None):
 
     @app.post("/api/tasks/{task_id}/{operation}")
     async def control(task_id: str, operation: str):
-        get(task_id)
+        task = get(task_id)
+        if task.get("channel") == "sim7600":
+            if operation not in {"pause", "cancel"}:
+                raise HTTPException(409, "电话结束后需新建通话")
+            if phone.task_id == task_id:
+                await phone.stop()
+            return get(task_id)
         if operation in {"pause", "cancel"}:
             await engine.stop(task_id, "paused" if operation == "pause" else "cancelled")
         elif operation == "resume":
