@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from pathlib import Path
 
 import httpx
@@ -24,6 +25,8 @@ class KimiAgentModel:
     def __init__(self, settings_path=None):
         self.settings_path = Path(settings_path) if settings_path else None
         self.saved = None
+        self.profiles = {}
+        self.active_id = None
         self.provider = "kimi"
         self.model = os.getenv("AGENT_KIMI_MODEL", "kimi-k2.6")
         self.base_url = os.getenv("AGENT_KIMI_BASE_URL", "https://api.kimi.com/coding/v1").rstrip(
@@ -39,9 +42,13 @@ class KimiAgentModel:
         if self.settings_path and self.settings_path.exists():
             from .settings import ModelSettings
 
-            self.apply(
-                ModelSettings.model_validate_json(self.settings_path.read_text(encoding="utf-8"))
-            )
+            data = json.loads(self.settings_path.read_text(encoding="utf-8"))
+            if data.get("version") == 2:
+                self.profiles = {p["id"]: ModelSettings.model_validate(p) for p in data["profiles"]}
+                self.active_id = data["active_id"]
+                self.apply(self.profiles[self.active_id])
+            else:
+                self.apply(ModelSettings.model_validate(data))
 
     def apply(self, settings):
         self.saved = settings
@@ -52,27 +59,102 @@ class KimiAgentModel:
         )
 
     def public_settings(self):
+        return self.public(self.current())
+
+    def current(self):
+        from .settings import ModelSettings
+
+        return self.saved or ModelSettings(
+            provider=self.provider,
+            base_url=self.base_url,
+            model=self.model,
+            vendor="kimi",
+            api_key=self.key(),
+        )
+
+    @staticmethod
+    def public(settings):
+        data = settings.model_dump(mode="json", exclude={"api_key", "clear_key"})
+        return {**data, "has_key": bool(settings.api_key.get_secret_value())}
+
+    def library(self):
+        if not self.profiles:
+            initial = self.current().model_copy(update={"id": uuid.uuid4().hex})
+            self.profiles = {initial.id: initial}
+            self.active_id = initial.id
         return {
-            "provider": self.provider,
-            "base_url": self.base_url,
-            "model": self.model,
-            "has_key": bool(self.key()),
-            "timeout_seconds": self.saved.timeout_seconds if self.saved else 60,
+            "active_id": self.active_id,
+            "profiles": [self.public(p) for p in self.profiles.values()],
         }
 
-    def configure(self, settings):
-        from .settings import write_settings
+    def commit_library(self, profiles, active_id):
+        from .settings import private_settings, write_json
 
-        # Empty password keeps the old key only for the exact same service.
-        same = settings.base_url == self.base_url and settings.provider == self.provider
-        key = settings.api_key.get_secret_value()
-        if not key and not settings.clear_key and same:
-            key = self.key()
-        settings = settings.model_copy(
-            update={"api_key": type(settings.api_key)(key), "clear_key": False}
+        write_json(
+            self.settings_path,
+            {
+                "version": 2,
+                "active_id": active_id,
+                "profiles": [private_settings(p) for p in profiles.values()],
+            },
         )
-        write_settings(self.settings_path, settings)
-        self.apply(settings)
+        self.profiles, self.active_id = profiles, active_id
+        self.apply(profiles[active_id])
+
+    def save_profile(self, settings):
+        self.library()
+        if settings.id and settings.id not in self.profiles:
+            raise ValueError("模型配置不存在")
+        previous = self.profiles.get(settings.id)
+        key = settings.api_key.get_secret_value()
+        if (
+            previous
+            and not key
+            and not settings.clear_key
+            and settings.base_url == previous.base_url
+            and settings.provider == previous.provider
+        ):
+            key = previous.api_key.get_secret_value()
+        settings = settings.model_copy(
+            update={
+                "id": settings.id or uuid.uuid4().hex,
+                "api_key": type(settings.api_key)(key),
+                "clear_key": False,
+            }
+        )
+        self.commit_library({**self.profiles, settings.id: settings}, self.active_id)
+        return self.public(settings)
+
+    def activate(self, profile_id):
+        self.library()
+        if profile_id not in self.profiles:
+            raise ValueError("模型配置不存在")
+        self.commit_library(self.profiles, profile_id)
+        return self.library()
+
+    def delete_profile(self, profile_id):
+        self.library()
+        if profile_id == self.active_id:
+            raise ValueError("请先切换到其他模型，再删除当前模型")
+        if profile_id not in self.profiles:
+            raise ValueError("模型配置不存在")
+        self.commit_library(
+            {k: v for k, v in self.profiles.items() if k != profile_id}, self.active_id
+        )
+        return self.library()
+
+    def for_profile(self, profile_id):
+        self.library()
+        if profile_id not in self.profiles:
+            raise ValueError("模型配置不存在")
+        selected = KimiAgentModel()
+        selected.apply(self.profiles[profile_id])
+        return selected
+
+    def configure(self, settings):
+        # Compatibility API edits the active profile; the library retains other profiles.
+        self.library()
+        self.save_profile(settings.model_copy(update={"id": self.active_id}))
         return self.public_settings()
 
     def key(self):
@@ -80,6 +162,10 @@ class KimiAgentModel:
             return self.saved.api_key.get_secret_value()
         path = os.getenv("AGENT_KIMI_KEY_FILE", "local-data/kimi-agent-key.txt")
         return Path(path).read_text(encoding="utf-8-sig").strip() if Path(path).is_file() else ""
+
+    @property
+    def request_timeout(self):
+        return self.saved.timeout_seconds if self.saved else 60
 
     async def decide(self, task, tools):
         key = self.key()
@@ -115,6 +201,20 @@ class KimiAgentModel:
         }
         if provider != "kimi":
             payload.pop("thinking")
+        if self.saved:
+            payload["max_tokens"] = self.saved.max_tokens
+            for parameter in (
+                "temperature",
+                "top_p",
+                "frequency_penalty",
+                "presence_penalty",
+                "seed",
+            ):
+                value = getattr(self.saved, parameter)
+                if value is not None:
+                    payload[parameter] = value
+            if provider != "kimi" and self.saved.reasoning != "default":
+                payload["reasoning_effort"] = self.saved.reasoning
         try:
             timeout = self.saved.timeout_seconds if self.saved else 60
             async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:

@@ -69,7 +69,11 @@ class Engine:
                 else:
                     async with self.model_gate:
                         action = await asyncio.wait_for(
-                            self.model.decide(task, self.tools.catalog()), timeout=75
+                            self.model.decide(task, self.tools.catalog()),
+                            timeout=min(
+                                getattr(self.model, "request_timeout", 60),
+                                max(0.01, deadline - time.monotonic()),
+                            ),
                         )
                 if action.plan:
                     task["plan"] = action.plan

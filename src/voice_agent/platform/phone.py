@@ -201,7 +201,9 @@ class PhoneController:
             catalog = [t for t in self.tools.catalog() if not t["name"].startswith("phone.")]
             started = time.monotonic()
             for _ in range(3):
-                action = await asyncio.wait_for(self.model.decide(task, catalog), 60)
+                action = await asyncio.wait_for(
+                    self.model.decide(task, catalog), getattr(self.model, "request_timeout", 60)
+                )
                 if action.action != "call_tool":
                     break
                 if action.tool.startswith("phone."):

@@ -1,33 +1,6 @@
 import React, {useEffect, useState} from 'react';
-
 type API = (path:string, body?:unknown)=>Promise<any>;
-type Config = {provider:string;base_url:string;model:string;has_key:boolean;timeout_seconds:number};
-export function ModelSettings({api,onSaved}:{api:API;onSaved:()=>void}){
-  const [config,setConfig]=useState<Config|null>(null),[key,setKey]=useState(''),[clear,setClear]=useState(false);
-  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[dirty,setDirty]=useState(false);
-  useEffect(()=>{api('/settings/model').then(setConfig).catch(e=>setError(String(e)));},[]);
-  function change(update:Partial<Config>){setConfig(old=>old?{...old,...update}:old);setDirty(true);setMessage('');}
-  async function run(save:boolean){setBusy(true);setError('');setMessage('');try{
-    if(save){const result=await api('/settings/model',{provider:config!.provider,base_url:config!.base_url,model:config!.model,api_key:key,clear_key:clear,timeout_seconds:config!.timeout_seconds});setConfig(result);setKey('');setClear(false);setDirty(false);onSaved();setMessage('配置已保存，下一次模型请求生效。');}
-    else {const result=await api('/settings/model/test',{});setMessage(`${result.message} · ${result.duration_ms} ms`);}
-  }catch(e){setError(String(e));}finally{setBusy(false);}}
-  return <section className="settings"><div className="panel settingsForm"><h2>大模型配置</h2><p>支持 Kimi 和 OpenAI 兼容的 Chat Completions 接口。模型需要能返回 JSON 动作。</p>
-    {error&&<p role="alert" className="settingsError">{error}</p>}{message&&<p role="status">{message}</p>}
-    {config&&<fieldset disabled={busy}><legend>服务与凭据</legend>
-      <label>接口类型<select value={config.provider} onChange={e=>change({provider:e.target.value})}><option value="kimi">Kimi（关闭思考）</option><option value="openai-compatible">OpenAI 兼容接口（含 Ollama / llama.cpp）</option></select></label>
-      <label>服务地址<input value={config.base_url} placeholder="http://127.0.0.1:11434/v1" onChange={e=>change({base_url:e.target.value})}/></label>
-      <small>填写 API 根地址，例如以 /v1 结尾；不要填写 /chat/completions。内网 HTTP 不加密，请仅用于可信网络。</small>
-      <label>模型名称<input value={config.model} placeholder="服务端实际安装或可调用的模型 ID" onChange={e=>change({model:e.target.value})}/></label>
-      <label>请求超时（秒）<input type="number" min="5" max="180" value={config.timeout_seconds} onChange={e=>change({timeout_seconds:Number(e.target.value)})}/></label>
-      <small>本地模型冷启动较慢时可设为 120–180 秒。</small>
-      <label>API 密钥<input type="password" autoComplete="new-password" value={key} placeholder={config.has_key?'已配置；留空保留同一服务的密钥':'本地免鉴权服务可留空'} onChange={e=>{setKey(e.target.value);setDirty(true);}}/></label>
-      <label className="checkLabel"><input type="checkbox" checked={clear} onChange={e=>{setClear(e.target.checked);setDirty(true);}}/>清除已保存密钥</label>
-      <p>保存新服务地址或接口类型时不会沿用旧密钥。密钥不回显，仅保存在本机；请勿把数据目录加入 Git。</p>
-      <div className="settingsActions"><button className="primary" onClick={()=>run(true)}>保存配置</button><button disabled={dirty} onClick={()=>run(false)}>{busy?'正在处理…':'测试已保存的配置'}</button></div>
-      <small>测试会向所选模型发送一次短请求，可能消耗额度；不会执行工具。修改后请先保存。</small>
-    </fieldset>}
-  </div></section>;
-}
+export {ModelSettings} from './model-settings';
 
 type Device = {sim_ready:boolean;registered:boolean;signal:string[];network:string[];registration:string[];calls:unknown[];owner:string|null};
 export function HardwareSettings({api}:{api:API}){

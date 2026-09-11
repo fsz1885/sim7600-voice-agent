@@ -29,9 +29,9 @@ scripts/start-hardware.ps1
 
 地址不要包含 /chat/completions、用户名、密钥、查询参数。OpenAI 兼容不等于所有厂商 API 都支持；当前要求 Chat Completions、JSON object 输出及项目 Action 格式，不支持 Anthropic 原生 Messages 或仅 Responses 接口。Kimi 发送关闭思考参数；兼容接口不发送 Kimi 专用参数，思考行为由所选服务决定。
 
-填写后“保存配置”，然后“测试已保存的配置”。测试发送一次短请求并验证动作格式，可能产生额度消耗；即使模型返回工具动作，也不会执行工具。测试通过不等于复杂任务或真实电话已验收。请求超时可设 5–180 秒，本地模型冷加载可选 120–180 秒。
+点击“添加模型”，选择提供商、填写连接信息与参数后“保存模型”。列表中的“连接测试”测试该条已保存的配置，“设为当前”切换后续任务使用的模型。测试发送一次短请求并验证动作格式，可能产生额度消耗；即使模型返回工具动作，也不会执行工具。测试通过不等于复杂任务或真实电话已验收。请求超时可设 5–180 秒，本地模型冷加载可选 120–180 秒。
 
-配置保存到 AGENT_DATA_DIR/model-settings.json，默认 local-data/agent/model-settings.json；重启后保留，优先于历史环境变量。密钥仅存本机文件，接口只返回 has_key。留空保留同一服务的密钥；切换地址或接口类型不携带旧密钥，可勾选清除密钥。配置文件用临时文件原子替换，不进入任务上下文、API 响应或 Git；数据目录仍需按敏感本地数据保管。自定义 AGENT_DATA_DIR 也应放在 Git 之外。
+模型库保存到 AGENT_DATA_DIR/model-settings.json，默认 local-data/agent/model-settings.json；重启后保留，优先于历史环境变量。版本 2 在同一个原子文件中保存 profiles 和 active_id，旧版单模型配置自动迁移，原配置与密钥保留。密钥仅存本机文件，接口只返回 has_key。留空保留同一服务的密钥；切换地址或接口类型不携带旧密钥，可勾选清除密钥。配置文件用临时文件原子替换，不进入任务上下文、API 响应或 Git；数据目录仍需按敏感本地数据保管。自定义 AGENT_DATA_DIR 也应放在 Git 之外。
 
 任务运行或电话进行中不允许保存/测试配置；先暂停任务、结束电话。修改作用于后续请求，不会修改历史记录。模型地址仅由工作台操作者设置，模型工具不能修改配置或读取密钥。内网 HTTP 不加密，应只用于可信网络。
 
@@ -58,3 +58,27 @@ SIM7600 拔插或重新枚举后 COM 号可能变化。空闲且无电话归属�
 NET 常亮与搜网状态一致；官方 AT 手册未找到直接判定 MAIN 天线接通/断路的查询命令。CSQ/CPSI 只能提供信号与网络信息，不能单独证明天线损坏。本轮未修改频段、APN 或固件，也未发起电话。后续继续时应先复查设备实时状态，不沿用本次读数。
 
 参考：[Waveshare M.2 HAT 文档](https://www.waveshare.net/wiki/SIM7600G-H-M2_4G_HAT)、[SIMCom AT 手册](https://files.waveshare.com/wiki/SIM7600G-H/SIM7500_SIM7600_Series_AT_Command_Manual_V3.00.pdf)。
+
+
+## 多模型管理（2026-09-11）
+
+参考 [WorkBuddy 官方模型配置](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model) 的提供商列表、模型编辑和本地持久化交互。
+
+- 左侧按 Kimi / Moonshot、llama.cpp、Ollama、自定义提供商分类，可搜索名称、模型 ID、地址。
+- 可保存多个模型或同一模型的不同参数配置，独立命名、编辑、测试、切换和删除；当前模型必须先切换才能删除。
+- Kimi、llama.cpp、Ollama 提供 API 地址预设；自定义入口使用 OpenAI 兼容 Chat Completions，不意味着支持所有厂商原生协议。
+- 编辑器可从已保存服务的 `/models` 获取模型 ID；接口不支持模型列表时允许手动填写。能力没有验证时不标记支持图片或原生工具调用。
+- Temperature、Top P、最大输出 tokens、频率/存在惩罚、随机种子、推理强度和超时可调。可选参数留空不发送；Kimi 固定关闭思考，兼容服务按选择发送 reasoning_effort。
+- 参数实际传到 Chat Completions 请求。服务可能不支持部分参数，应使用连接测试检查；最大输出不是上下文容量，模型上下文由服务端部署决定。
+- 保存其他配置与测试其他模型不会切换当前模型。编辑当前配置立即作用于后续请求；有任务或电话运行时拒绝修改、切换、删除和测试。
+- 密钥独立保存在每条模型配置中，新模型不会继承另一条的密钥；编辑原模型仅在相同端点和协议时允许留空保留。API 只返回 has_key，不回显密钥。
+- 单个请求超时由所选配置决定，执行循环仍受任务总时限约束，电话仍受最大通话时长限制。
+
+新增接口：GET/POST `/api/settings/models`，POST `/api/settings/models/{id}/activate|delete|test|discover`。
+原 `/api/settings/model` 兼容接口仍读取或更新当前条目。所有 POST 保留同源校验与操作请求标识。
+
+本机已配置内网 llama.cpp 的 `sim7600-local` 并设为当前，原 Kimi 条目保留。
+真实 `/v1/models` 返回运行上下文 8192，连接与动作格式测试通过，约 1598 ms；这是一次短请求，不能代表电话全链路或稳定延迟分位数。
+默认内网参数 Temperature=0.3、max_tokens=1600、timeout=120 秒、reasoning_effort=none，其余使用服务默认。
+125 项 Python 测试通过，覆盖旧配置迁移、重启、独立密钥、写入失败不切换、请求参数传递与测试不激活。
+浏览器实测显示两条模型、当前内网模型、参数表单；获取列表与保存成功。没有拨号。

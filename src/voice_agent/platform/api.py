@@ -135,14 +135,84 @@ def create_app(root=None, model=None, tools=None, speech=None):
         except (ValueError, OSError):
             raise HTTPException(422, "配置保存失败，请检查配置和数据目录权限") from None
 
+    @app.get("/api/settings/models")
+    async def model_library():
+        configurable()
+        return model.library()
+
+    @app.post("/api/settings/models")
+    async def save_profile(body: ModelSettings):
+        configurable()
+        idle()
+        try:
+            return model.save_profile(body)
+        except (ValueError, OSError):
+            raise HTTPException(422, "保存失败，请检查模型配置与目录权限") from None
+
+    @app.post("/api/settings/models/{profile_id}/activate")
+    async def activate_profile(profile_id: str):
+        configurable()
+        idle()
+        try:
+            return model.activate(profile_id)
+        except (ValueError, OSError):
+            raise HTTPException(409, "切换失败，请检查已保存的模型") from None
+
+    @app.post("/api/settings/models/{profile_id}/delete")
+    async def delete_profile(profile_id: str):
+        configurable()
+        idle()
+        try:
+            return model.delete_profile(profile_id)
+        except (ValueError, OSError):
+            raise HTTPException(409, "删除失败：请先切换到其他模型，并检查目录权限") from None
+
+    def selected_model(profile_id):
+        configurable()
+        try:
+            return model.for_profile(profile_id)
+        except ValueError:
+            raise HTTPException(404, "模型配置不存在") from None
+
+    @app.post("/api/settings/models/{profile_id}/discover")
+    async def discover_models(profile_id: str):
+        idle()
+        selected = selected_model(profile_id)
+        async with config_test:
+            try:
+                async with httpx.AsyncClient(timeout=15, trust_env=False) as client:
+                    key = selected.key()
+                    response = await client.get(
+                        selected.base_url + "/models",
+                        headers={"Authorization": "Bearer " + key} if key else {},
+                    )
+                    response.raise_for_status()
+                    ids = sorted(
+                        {
+                            item["id"]
+                            for item in response.json()["data"]
+                            if isinstance(item.get("id"), str) and len(item["id"]) <= 200
+                        }
+                    )
+                    return {"models": ids[:200]}
+            except (httpx.HTTPError, ValueError, KeyError, TypeError, AttributeError):
+                raise HTTPException(502, "获取模型列表失败；可手动填写服务端模型 ID") from None
+
+    @app.post("/api/settings/models/{profile_id}/test")
+    async def test_profile(profile_id: str):
+        return await run_model_test(selected_model(profile_id))
+
     @app.post("/api/settings/model/test")
     async def test_model():
+        return await run_model_test(model)
+
+    async def run_model_test(selected):
         configurable()
         idle()
         async with config_test:
             start = time.perf_counter()
             try:
-                result = await model.decide(
+                result = await selected.decide(
                     {
                         "goal": "请用 speak 简短回复连接测试成功，不调用工具",
                         "plan": [],
@@ -153,7 +223,7 @@ def create_app(root=None, model=None, tools=None, speech=None):
                 )
                 return {
                     "ok": True,
-                    "model": model.model,
+                    "model": selected.model,
                     "action": result.action,
                     "duration_ms": round((time.perf_counter() - start) * 1000),
                     "message": "连接与动作格式校验通过；没有执行任何工具",
