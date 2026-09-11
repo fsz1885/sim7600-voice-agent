@@ -19,6 +19,41 @@ class ScriptModel:
         return Action(**next(self.actions))
 
 
+def test_successful_dial_hands_same_task_to_voice_without_next_decision(tmp_path):
+    async def run():
+        store = Store(tmp_path / "db")
+        tools = Tools(tmp_path)
+        operations, handoffs = [], []
+
+        async def execute(name, args, task_id, execution_id):
+            operations.append(name)
+            return {"accepted": True}
+
+        class Phone:
+            def start(self, number, goal, **kwargs):
+                handoffs.append((number, goal, kwargs))
+
+        tools.execute = execute
+        engine = Engine(
+            store,
+            ScriptModel(
+                {"action": "call_tool", "tool": "phone.dial", "arguments": {"number": "12345"}}
+            ),
+            tools,
+        )
+        engine.phone = Phone()
+        task = store.create("与 kd 闲聊", ["12345"])
+        engine.start(task["id"])
+        await engine.jobs[task["id"]]
+        assert operations == ["phone.dial"]
+        assert handoffs == [("12345", task["goal"], {"task_id": task["id"], "attached": True})]
+        assert store.get(task["id"])["status"] == "running"
+        assert store.get(task["id"])["executions"][0]["status"] == "succeeded"
+        store.close()
+
+    asyncio.run(run())
+
+
 def test_multistep_tools_complete_with_real_artifact_and_persistence(tmp_path):
     async def run():
         store = Store(tmp_path / "state.db")

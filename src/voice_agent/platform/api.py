@@ -66,6 +66,7 @@ def create_app(root=None, model=None, tools=None, speech=None):
         os.getenv("HARDWARE_KEY_FILE", "local-data/hardware-api-key.txt"),
     )
     audio_dir = root / "audio"
+    engine.phone = phone
     audio_dir.mkdir(exist_ok=True)
 
     @asynccontextmanager

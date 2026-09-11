@@ -158,3 +158,46 @@ def test_stop_during_prewarm_never_dials(tmp_path):
         store.close()
 
     asyncio.run(run())
+
+
+def test_attached_call_starts_audio_without_redial_and_retains_history(tmp_path):
+    pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from voice_agent.platform.phone import PhoneController, pcm_wav
+
+    class Speech:
+        def synthesize(self, text):
+            return pcm_wav(bytes(3200))
+
+        def transcribe(self, audio):
+            return "测试"
+
+    async def run():
+        key = tmp_path / "key"
+        key.write_text("test")
+        store = Store(tmp_path / "db")
+        task = store.create("与 kd 闲聊", ["12345"])
+        task["messages"].append({"role": "user", "content": "已授权"})
+        store.save(task, "message")
+        phone = PhoneController(store, None, None, Speech(), tmp_path, "http://unused", key)
+        requests = []
+
+        async def request(path, body=None):
+            requests.append(path)
+            if path == "/status":
+                return {"calls": [{"status": 0}]}
+            if path == "/audio/start":
+                phone.stopped.set()
+                return {"generation": 0}
+            return {}
+
+        phone.request = request
+        phone.start("12345", task["goal"], task_id=task["id"], attached=True)
+        await phone.job
+        assert requests == ["/status", "/audio/start", "/hangup"]
+        final = store.get(task["id"])
+        assert final["channel"] == "sim7600"
+        assert final["messages"][1]["content"] == "已授权"
+        store.close()
+
+    asyncio.run(run())

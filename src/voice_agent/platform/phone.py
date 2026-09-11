@@ -88,16 +88,26 @@ class PhoneController:
         self.generation = 0
         self.turn_version = 0
 
-    def start(self, number, goal, seconds=120):
+    def start(self, number, goal, seconds=120, *, task_id=None, attached=False):
         if self.job and not self.job.done():
             raise ValueError("已有电话正在进行")
         if not self.key_file.is_file():
             raise ValueError("缺少硬件服务密钥")
         self.stopped = asyncio.Event()
-        task = self.store.create(goal, [number])
+        if attached and not task_id:
+            raise ValueError("接管通话需要原任务 ID")
+        task = self.store.get(task_id) if task_id else self.store.create(goal, [number])
         task["status"] = "running"
         task["channel"] = "sim7600"
         self.store.save(task, "phone_start", {"max_seconds": seconds})
+        if attached:
+            task["messages"].append(
+                {
+                    "role": "assistant",
+                    "content": "电话操作已提交，正在连接实时语音；接通后会自动交谈。",
+                }
+            )
+            self.store.save(task, "phone_handoff")
         self.task_id = task["id"]
         self.live = {
             "status": "preparing",
@@ -107,7 +117,7 @@ class PhoneController:
             "sent_bytes": 0,
             "received_bytes": 0,
         }
-        self.job = asyncio.create_task(self.run(number, seconds))
+        self.job = asyncio.create_task(self.run(number, seconds, attached=attached))
         return task
 
     def event(self, event, **payload):
@@ -245,7 +255,7 @@ class PhoneController:
         except Exception as exc:
             self.event("phone_turn_error", error=type(exc).__name__)
 
-    async def run(self, number, seconds):
+    async def run(self, number, seconds, *, attached=False):
         try:
             # Load TTS/ASR before placing the call, so the other side does not wait for loading.
             greeting = await asyncio.to_thread(
@@ -262,7 +272,8 @@ class PhoneController:
             ) as client:
                 self.client = client
                 try:
-                    await self.request("/dial", {**self.operation(), "number": number})
+                    if not attached:
+                        await self.request("/dial", {**self.operation(), "number": number})
                     self.live["status"] = "dialing"
                     self.event("phone_dialing")
                     deadline = time.monotonic() + 45
@@ -341,6 +352,13 @@ class PhoneController:
             )
             self.event("phone_error", error=self.live["error"])
         finally:
+            # Attached calls already exist during prewarm; release even if prewarm fails.
+            if attached and self.client is None:
+                try:
+                    await self.tools.execute("phone.hangup", {}, self.task_id, uuid.uuid4().hex)
+                    self.event("phone_released")
+                except Exception:
+                    self.event("phone_cleanup_failed", message="需核对实际电话是否已挂断")
             self.client = None
             if self.live["status"] not in {"error", "stopped"}:
                 self.live["status"] = "ended"

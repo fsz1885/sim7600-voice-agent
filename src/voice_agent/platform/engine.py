@@ -12,6 +12,7 @@ class Engine:
         self.max_steps = max_steps
         self.jobs = {}
         self.model_gate = asyncio.Semaphore(1)
+        self.phone = None
 
     def start(self, task_id):
         if task_id in self.jobs and not self.jobs[task_id].done():
@@ -142,6 +143,20 @@ class Engine:
                     }
                 )
                 self.store.save(task, "tool_finished", execution)
+                if (
+                    self.phone is not None
+                    and action.tool in {"phone.dial", "phone.answer"}
+                    and execution["status"] == "succeeded"
+                ):
+                    try:
+                        self.phone.start(
+                            args.get("number", ""), task["goal"], task_id=task_id, attached=True
+                        )
+                    except Exception:
+                        await self.tools.execute("phone.hangup", {}, task_id, uuid.uuid4().hex)
+                        raise RuntimeError("语音会话启动失败，已请求释放电话") from None
+                    # The phone controller now owns task state and conversation turns.
+                    return
                 if failures >= 2 or execution["status"] == "unknown":
                     raise RuntimeError("工具失败或结果未知，任务已暂停，需核实")
             raise RuntimeError("达到单次执行步数上限，任务已暂停")
