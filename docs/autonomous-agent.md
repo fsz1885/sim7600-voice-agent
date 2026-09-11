@@ -60,18 +60,31 @@ AGENT_DATA_DIR、HARDWARE_URL、HARDWARE_KEY_FILE、VOICE_MODELS_DIR。
 本次在 knowledge 放入项目 SIM7600 使用说明用于合成任务测试。
 新工作台可在“大模型配置”页保存服务地址、模型、密钥和请求超时；已有保存配置优先于环境变量。详见 [工作台设备与模型配置](workbench-settings.md)。
 
-### Docker 业务服务
+### Docker 业务服务（当前本机部署）
 
-已提供 Dockerfile.agent 和 compose.agent.yml，硬件服务仍在 Windows 原生运行。
-停止原生 8766 工作台后才可运行：
+2026-09-11 已从 Windows 原生工作台迁移至 Docker，访问 http://127.0.0.1:8765。
+沿用原 Compose 项目 sim7600-voice-agent、服务 console、容器名 sim7600-console，
+使用 Dockerfile.agent 重建镜像。容器内部端口 8766 映射到宿主机 8765。
+Windows 原生 8766 工作台已停止；SIM7600 硬件服务仍由 Windows 原生 8767 访问串口。
 
 ```powershell
-docker compose -f compose.agent.yml up -d --build
+docker compose -f compose.agent.yml up -d --build console
+docker compose -f compose.agent.yml ps
+docker compose -f compose.agent.yml logs --tail 100 console
+# 停止容器工作台
+docker compose -f compose.agent.yml stop console
 ```
 
-容器通过 host.docker.internal:8767 调用硬件服务，密钥用只读 secrets 文件挂载。
-此次 Docker Desktop 引擎未能启动，容器构建、容器到 Windows 硬件接口尚未本机验收；
-当前实际可用部署是 Windows 原生工作台。不能同时运行两个工作台共享同一数据库。
+原 compose.voice.yml / compose.lan.yml 提供旧询问控制台，与新配置共用容器名称和端口，
+请选择一个运行，不要交替执行不同 Compose 文件的 up 命令。
+任务和模型库继续使用 local-data/agent，模型只读挂载 docs/speech-evaluation/models。
+迁移前已将 SQLite 与模型库备份至 local-data/docker-migration-时间戳（含密钥，不提交）。
+原询问控制台的数据仍保留在 local-data，其数据结构与新工作台不同，不自动导入。
+
+容器通过 host.docker.internal:8767 访问带 Bearer 鉴权的原生硬件服务，密钥只读挂载。
+本机已验证容器到硬件服务通信、内网 LLM、TTS → WAV → ASR 和健康检查。
+不要同时启动 Windows 原生工作台与容器共享同一 SQLite 数据库。
+容器 restart 策略为 unless-stopped；仍需 Docker Desktop 引擎运行，硬件服务独立启动。
 
 ## 已验证与限制（2026-09-10）
 

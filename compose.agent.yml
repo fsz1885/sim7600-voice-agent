@@ -1,13 +1,13 @@
-name: sim7600-agent
+name: sim7600-voice-agent
 services:
-  workbench:
+  console:
     build:
       context: .
       dockerfile: Dockerfile.agent
-    container_name: sim7600-workbench
+    container_name: sim7600-console
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8766:8766"
+      - "127.0.0.1:8765:8766"
     environment:
       AGENT_DATA_DIR: /data
       AGENT_KIMI_BASE_URL: https://api.kimi.com/coding/v1

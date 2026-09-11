@@ -13,7 +13,8 @@
 | 8765 原询问控制台 | 结构化字段采集、浏览器连续语音，可用本机或内网 LLM | [本地部署](docs/local-deployment.md)、[内网部署](docs/lan-deployment.md) |
 | CLI / 基础 Docker | 离线模拟、Core 开发和测试 | 下文快速开始 |
 
-当前真实电话使用 Windows 原生部署；工作台 Docker 方案尚未本机验收。
+当前工作台使用 Docker 部署于 8765，复用 sim7600-console；SIM7600 硬件服务仍在 Windows 原生 8767 运行。
+表中 8766 是原生工作台入口，当前已停止。Docker 操作见 [运行指南](docs/autonomous-agent.md)。
 电话测试结果与响应时间见 [电话评估](docs/phone-evaluation.md)。
 
 ## 原询问控制台：Windows + RTX 4060 本地运行
