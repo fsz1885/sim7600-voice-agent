@@ -23,7 +23,7 @@ export function ModelSettings({api,onSaved}:{api:API;onSaved:()=>void}){
   useEffect(()=>{refresh().catch(e=>setError(String(e)));},[]);
   async function run(fn:()=>Promise<void>){setBusy(true);setError('');setMessage('');try{await fn();}catch(e){setError(String(e));}finally{setBusy(false);}}
   function edit(config:Config){setDraft({...config});setKey('');setClear(false);setDirty(false);setModelIds([]);setDeleting(null);setMessage('');setError('');}
-  function change(update:Partial<Config>){setDraft(old=>old?{...old,...update}:old);setDirty(true);setMessage('');}
+  function change(update:Partial<Config>){if('base_url' in update||'provider' in update)setModelIds([]);setDraft(old=>old?{...old,...update}:old);setDirty(true);setMessage('');}
   function chooseVendor(id:string){const v=vendors.find(v=>v.id===id)!;change({vendor:id,provider:v.provider,base_url:v.url,has_key:false});setKey('');setClear(false);setModelIds([]);}
   async function save(){
     const {has_key,...body}=draft!;
@@ -45,8 +45,10 @@ export function ModelSettings({api,onSaved}:{api:API;onSaved:()=>void}){
       <div className="parameterGrid"><label>提供商<select value={draft.vendor} onChange={e=>chooseVendor(e.target.value)}>{vendors.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label><label>显示名称<input value={draft.name} placeholder="例如：3070 Laptop · 日常语音" onChange={e=>change({name:e.target.value})}/></label></div>
       <label>API 根地址<input value={draft.base_url} placeholder="http://主机地址:8080/v1" onChange={e=>change({base_url:e.target.value})}/></label><small>使用 /v1 等 API 根路径，程序自动追加 /chat/completions。当前支持 Kimi 与 OpenAI 兼容协议。</small>
       <label>模型 ID<input list="discovered-models" value={draft.model} placeholder="服务端实际模型 ID" onChange={e=>change({model:e.target.value})}/><datalist id="discovered-models">{modelIds.map(id=><option key={id} value={id}/>)}</datalist></label>
-      <button disabled={!draft.id||dirty} onClick={()=>run(async()=>{const r=await api(`/settings/models/${draft.id}/discover`,{});setModelIds(r.models);setMessage(r.models.length?`已获取 ${r.models.length} 个模型，可在模型 ID 输入框选择。`:'服务未返回模型，可手动填写。');})}>获取已保存服务的模型列表</button>
-      <label>API Key<input type="password" autoComplete="new-password" value={key} placeholder={draft.has_key?'已配置；留空保留该模型同一端点的密钥':'无鉴权的本地服务可留空'} onChange={e=>{setKey(e.target.value);setDirty(true);}}/></label>
+      <button disabled={!draft.base_url.trim()} onClick={()=>run(async()=>{setModelIds([]);const {has_key,...body}=draft;const r=await api('/settings/models/discover',{...body,model:draft.model.trim()||'model-discovery',api_key:key,clear_key:clear});setModelIds(r.models);setMessage(r.models.length?`服务器返回 ${r.models.length} 个模型，请从下方选择后保存。`:'服务器返回空列表，可手动填写模型 ID。');})}>从服务器获取模型列表</button>
+      <small>可在保存前获取；使用当前填写的地址与密钥，不修改已保存配置。列表可见不等于当前任务格式一定兼容。</small>
+      {modelIds.length>0&&<label>服务器模型<select value={modelIds.includes(draft.model)?draft.model:''} onChange={e=>{if(e.target.value)change({model:e.target.value});}}><option value="">请选择模型</option>{modelIds.map(id=><option key={id} value={id}>{id}</option>)}</select></label>}
+      <label>API Key<input type="password" autoComplete="new-password" value={key} placeholder={draft.has_key?'已配置；留空保留该模型同一端点的密钥':'无鉴权的本地服务可留空'} onChange={e=>{setKey(e.target.value);setModelIds([]);setDirty(true);}}/></label>
       <label className="checkLabel"><input type="checkbox" checked={clear} onChange={e=>{setClear(e.target.checked);setDirty(true);}}/>清除该模型的密钥</label>
       <details open><summary>生成参数</summary><p><small>可选参数留空时使用服务默认值。不同服务支持范围不同；修改后请运行连接测试。</small></p><div className="parameterGrid">
         <label>最大输出 tokens<input type="number" min="64" max="32768" value={draft.max_tokens} onChange={e=>change({max_tokens:Number(e.target.value)})}/></label>

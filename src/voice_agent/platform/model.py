@@ -224,10 +224,21 @@ class KimiAgentModel:
                     headers={"Authorization": "Bearer " + key} if key else {},
                 )
                 if not response.is_success:
-                    raise ProviderError(f"模型服务 HTTP {response.status_code}")
+                    reason = {
+                        401: "密钥无效或已失效，检查密钥所属平台与 API 地址",
+                        403: "账号无权限或服务拒绝当前使用方式",
+                        404: "模型或 API 地址不存在，请获取服务器模型列表",
+                        429: "请求限流或额度不足",
+                        400: "模型或生成参数不受支持，请核对模型并恢复可选参数默认值",
+                    }.get(response.status_code, "模型服务返回错误")
+                    raise ProviderError(f"模型服务 HTTP {response.status_code}：{reason}")
                 choice = response.json()["choices"][0]
                 if choice["finish_reason"] != "stop":
                     raise ProviderError("模型输出被截断，未执行动作")
                 return Action.model_validate_json(choice["message"]["content"])
-        except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError) as exc:
+        except httpx.TimeoutException as exc:
+            raise ProviderError("请求超时，请检查网络或增加请求超时") from exc
+        except httpx.HTTPError as exc:
+            raise ProviderError("无法连接模型服务，请检查网络和 API 地址") from exc
+        except (ValueError, KeyError, TypeError, IndexError) as exc:
             raise ProviderError("模型请求或动作格式无效，未执行动作") from exc

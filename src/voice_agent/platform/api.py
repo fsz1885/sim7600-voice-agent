@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..diagnostics import DiagnosticQuery
+from ..providers import ProviderError
 from ..speech import LocalSpeech
 from .engine import Engine
 from .model import KimiAgentModel
@@ -179,6 +180,27 @@ def create_app(root=None, model=None, tools=None, speech=None):
     async def discover_models(profile_id: str):
         idle()
         selected = selected_model(profile_id)
+        return await fetch_model_list(selected)
+
+    @app.post("/api/settings/models/discover")
+    async def discover_draft(body: ModelSettings):
+        configurable()
+        idle()
+        key = body.api_key.get_secret_value()
+        if body.id:
+            previous = selected_model(body.id)
+            if (
+                not key
+                and not body.clear_key
+                and body.base_url == previous.base_url
+                and body.provider == previous.provider
+            ):
+                key = previous.key()
+        selected = KimiAgentModel()
+        selected.apply(body.model_copy(update={"api_key": type(body.api_key)(key)}))
+        return await fetch_model_list(selected)
+
+    async def fetch_model_list(selected):
         async with config_test:
             try:
                 async with httpx.AsyncClient(timeout=15, trust_env=False) as client:
@@ -195,7 +217,18 @@ def create_app(root=None, model=None, tools=None, speech=None):
                             if isinstance(item.get("id"), str) and len(item["id"]) <= 200
                         }
                     )
-                    return {"models": ids[:200]}
+                    return {"models": ids[:200], "source": "server"}
+            except httpx.HTTPStatusError as exc:
+                code = exc.response.status_code
+                detail = {
+                    401: "密钥无效或已失效；Kimi Coding 与 Moonshot 的密钥不通用",
+                    403: "服务拒绝访问；检查账号权限或服务使用限制",
+                    404: "服务未提供 /models 接口，或 API 根地址不正确；可手动填写模型 ID",
+                    429: "请求限流或额度不足，请检查账户后重试",
+                }.get(code, "模型服务返回错误，请检查服务状态")
+                raise HTTPException(502, f"获取模型列表失败：HTTP {code}，{detail}") from None
+            except httpx.TimeoutException:
+                raise HTTPException(504, "获取模型列表超时，请检查网络与服务地址") from None
             except (httpx.HTTPError, ValueError, KeyError, TypeError, AttributeError):
                 raise HTTPException(502, "获取模型列表失败；可手动填写服务端模型 ID") from None
 
@@ -229,6 +262,8 @@ def create_app(root=None, model=None, tools=None, speech=None):
                     "duration_ms": round((time.perf_counter() - start) * 1000),
                     "message": "连接与动作格式校验通过；没有执行任何工具",
                 }
+            except ProviderError as exc:
+                raise HTTPException(502, f"模型测试失败：{exc}") from None
             except Exception:
                 raise HTTPException(
                     502, "模型测试失败：请检查服务地址、模型、密钥及 JSON 动作兼容性"

@@ -18,6 +18,39 @@ from voice_agent.sim7600 import ATResponse, Sim7600
 HEADERS = {"X-Agent-UI": "1"}
 
 
+def test_draft_discovery_needs_no_saved_model_and_sanitizes_errors(tmp_path, monkeypatch):
+    status = [200]
+
+    def handler(request):
+        assert request.headers["authorization"] == "Bearer discovery-secret"
+        if status[0] != 200:
+            return httpx.Response(status[0], json={"error": "discovery-secret"})
+        return httpx.Response(200, json={"data": [{"id": "server-model"}]})
+
+    original = httpx.AsyncClient
+    monkeypatch.setattr(
+        httpx, "AsyncClient", lambda **kw: original(transport=httpx.MockTransport(handler), **kw)
+    )
+    with TestClient(create_app(tmp_path), headers=HEADERS) as client:
+        payload = {
+            "provider": "kimi",
+            "base_url": "https://api.kimi.com/coding/v1",
+            "model": "model-discovery",
+            "api_key": "discovery-secret",
+        }
+        response = client.post("/api/settings/models/discover", json=payload)
+        assert response.json()["models"] == ["server-model"]
+        assert not (tmp_path / "model-settings.json").exists()
+        status[0] = 401
+        response = client.post("/api/settings/models/discover", json=payload)
+        assert response.status_code == 502 and "401" in response.text
+        assert "discovery-secret" not in response.text
+        client.post("/api/settings/model", json=payload).raise_for_status()
+        response = client.post("/api/settings/model/test", json={})
+        assert response.status_code == 502 and "401" in response.text
+        assert "discovery-secret" not in response.text
+
+
 def config(**kw):
     return {
         "provider": "openai-compatible",
