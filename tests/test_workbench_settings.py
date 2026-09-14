@@ -18,6 +18,20 @@ from voice_agent.sim7600 import ATResponse, Sim7600
 HEADERS = {"X-Agent-UI": "1"}
 
 
+def test_key_reveal_requires_explicit_same_origin_post(tmp_path):
+    with TestClient(create_app(tmp_path), headers=HEADERS) as client:
+        profile = client.post(
+            "/api/settings/models", json=config(api_key="test-reveal-secret")
+        ).json()
+        path = f"/api/settings/models/{profile['id']}/reveal-key"
+        assert "test-reveal-secret" not in client.get("/api/settings/models").text
+        assert client.get(path).status_code != 200
+        assert client.post(path, headers={"Origin": "https://evil.example"}).status_code == 403
+        response = client.post(path, json={})
+        assert response.json()["api_key"] == "test-reveal-secret"
+        assert response.headers["cache-control"] == "no-store"
+
+
 def test_draft_discovery_needs_no_saved_model_and_sanitizes_errors(tmp_path, monkeypatch):
     status = [200]
 

@@ -182,6 +182,13 @@ def create_app(root=None, model=None, tools=None, speech=None):
         selected = selected_model(profile_id)
         return await fetch_model_list(selected)
 
+    @app.post("/api/settings/models/{profile_id}/reveal-key")
+    async def reveal_key(profile_id: str):
+        # Explicit local operator action only; list/detail APIs remain redacted.
+        return JSONResponse(
+            {"api_key": selected_model(profile_id).key()}, headers={"Cache-Control": "no-store"}
+        )
+
     @app.post("/api/settings/models/discover")
     async def discover_draft(body: ModelSettings):
         configurable()
